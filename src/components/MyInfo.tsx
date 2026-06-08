@@ -53,91 +53,107 @@ export default function MyInfo({ userState, onUpdateUserState }: MyInfoProps) {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         
         {/* Profile Card & Nickname customizer */}
-        <div className="bg-[#141416] p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl">
-          <h3 className="font-extrabold text-sm md:text-base text-neutral-200 mb-4">독자 프로필 정보</h3>
-          <form onSubmit={handleSaveNickname} className="flex gap-2">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={nicknameInput}
-                onChange={(e) => setNicknameInput(e.target.value)}
-                placeholder="새 닉네임을 입력하세요"
-                maxLength={10}
-                className="w-full h-11 bg-neutral-900 border border-neutral-800 rounded-xl px-4 text-xs md:text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#7632ff]"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!nicknameInput.trim() || nicknameInput.trim() === userState.nickname}
-              className="h-11 px-5 bg-neutral-800 hover:bg-[#7632ff] hover:text-white text-neutral-300 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {successSaved ? <Check className="w-3.5 h-3.5 text-green-400 animate-bounce" /> : null}
-              <span>{successSaved ? "저장됨" : "저장"}</span>
-            </button>
-          </form>
-          {successSaved && <p className="text-[10px] text-green-400 mt-1 px-1">닉네임이 성공적으로 반영되었습니다!</p>}
-        </div>
-
-        {/* Currency summary card */}
-        <div className="bg-[#151518] p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-extrabold text-sm md:text-base text-neutral-200">내 영웅 상점 잔고</h3>
-            <span className="text-[10px] text-[#7632ff] font-bold bg-[#7632ff]/10 border border-[#7632ff]/20 px-2 py-0.5 rounded-full uppercase">VIP Balance</span>
+        <div className="bg-[#141416] p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl flex flex-col justify-between">
+          <div>
+            <h3 className="font-extrabold text-sm md:text-base text-neutral-200 mb-4 font-sans">독자 프로필 정보</h3>
+            <form onSubmit={handleSaveNickname} className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={nicknameInput}
+                  onChange={(e) => setNicknameInput(e.target.value)}
+                  placeholder="새 닉네임을 입력하세요"
+                  maxLength={10}
+                  className="w-full h-11 bg-neutral-900 border border-neutral-800 rounded-xl px-4 text-xs md:text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-[#7632ff]"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!nicknameInput.trim() || nicknameInput.trim() === userState.nickname}
+                className="h-11 px-5 bg-neutral-800 hover:bg-[#7632ff] hover:text-white text-neutral-300 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed cursor-pointer shrink-0"
+              >
+                {successSaved ? <Check className="w-3.5 h-3.5 text-green-400 animate-bounce" /> : null}
+                <span>{successSaved ? "저장됨" : "저장"}</span>
+              </button>
+            </form>
+            {successSaved && <p className="text-[10px] text-green-400 mt-1 px-1">닉네임이 성공적으로 반영되었습니다!</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#222]/50 p-4 rounded-xl border border-[#303030]/60 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-neutral-500 block font-medium">유료/충전 자산</span>
-                <span className="text-[#3a5cff] font-extrabold text-lg md:text-xl font-mono mt-1 inline-block">{userState.coins}</span>
-                <span className="text-xs text-neutral-400 font-semibold ml-1.5">코인</span>
+          <div className="flex flex-col justify-end mt-6">
+            {/* Divider */}
+            <div className="w-full h-[1px] bg-neutral-800/60 mb-5" />
+
+            {/* Safety Adult Switch Inline inside Profile */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <h4 className="font-extrabold text-xs md:text-sm text-neutral-200 flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#7632ff]" />
+                  성인모드 활성화 (19+)
+                </h4>
+                <p className="text-[10px] md:text-[11px] text-neutral-400 mt-1">
+                  당당하고 수위 높은 웹소설 캐릭터 및 세계관을 노출합니다.
+                </p>
               </div>
-              <Coins className="w-6 h-6 text-[#3a5cff]/30" />
+              <button
+                onClick={handleSafetyToggle}
+                className={`relative w-12 h-6.5 rounded-full p-0.5 cursor-pointer transition-colors duration-300 shrink-0 ${
+                  userState.unlockedAdult ? "bg-[#7632ff]" : "bg-neutral-800 border border-neutral-700/60"
+                }`}
+              >
+                <div
+                  className={`w-5.5 h-5.5 bg-white rounded-full transition-transform duration-300 shadow-md ${
+                    userState.unlockedAdult ? "translate-x-5.5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+ 
+        {/* Currency summary card */}
+        <div className="bg-[#151518] p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-extrabold text-sm md:text-base text-neutral-200">내 영웅 상점 잔고</h3>
+              <span className="text-[10px] text-[#7632ff] font-bold bg-[#7632ff]/10 border border-[#7632ff]/20 px-2 py-0.5 rounded-full uppercase">VIP Balance</span>
             </div>
 
-            <div className="bg-[#222]/50 p-4 rounded-xl border border-[#303030]/60 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-neutral-500 block font-medium">대화 무료 영웅 티켓</span>
-                <span className="text-[#7632ff] font-extrabold text-lg md:text-xl font-mono mt-1 inline-block">{userState.tickets}</span>
-                <span className="text-xs text-neutral-400 font-semibold ml-1.5">티켓</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#222]/50 p-3.5 rounded-xl border border-[#303030]/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-neutral-500 block font-medium">유료/충전 자산</span>
+                  <span className="text-[#3a5cff] font-extrabold text-base md:text-lg font-mono mt-0.5 inline-block">{userState.coins}</span>
+                  <span className="text-[11px] text-neutral-400 font-semibold ml-1">코인</span>
+                </div>
+                <img src="//images.novelpia.com/img/new/chat/sidemenu/icon-coin_.svg" alt="코인" className="w-6 h-6 object-contain shrink-0 opacity-80" referrerPolicy="no-referrer" />
               </div>
-              <CreditCard className="w-6 h-6 text-[#7632ff]/30" />
+
+              <div className="bg-[#222]/50 p-3.5 rounded-xl border border-[#303030]/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-neutral-500 block font-medium">무료 대화 티켓</span>
+                  <span className="text-[#7632ff] font-extrabold text-base md:text-lg font-mono mt-0.5 inline-block">{userState.tickets}</span>
+                  <span className="text-[11px] text-neutral-400 font-semibold ml-1">티켓</span>
+                </div>
+                <img src="//images.novelpia.com/img/new/chat/icon_chat_ticket.svg" alt="챗티켓" className="w-6 h-6 object-contain shrink-0 opacity-80" referrerPolicy="no-referrer" />
+              </div>
             </div>
           </div>
 
           <button
             onClick={handleChargeFreeCurrency}
-            className="w-full mt-4 h-12 bg-neutral-900 border border-neutral-800 hover:border-[#7632ff]/30 rounded-xl font-bold text-xs text-[#ccc] hover:text-white flex items-center justify-center gap-1.5 transition-all text-neutral-300 cursor-pointer"
+            className="w-full mt-5 h-11 bg-neutral-900 border border-neutral-800 hover:border-[#7632ff]/30 rounded-xl font-bold text-[11px] md:text-xs text-[#ccc] hover:text-white flex items-center justify-center gap-1.5 transition-all text-neutral-300 cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-neutral-500 animate-spin-slow" />
-            <span>지원 보급품 수령 (무료 100 코인 & 티켓 충전)</span>
+            <RefreshCw className="w-3.5 h-3.5 text-neutral-500" />
+            <span>지원 보급품 수령 (무료 충전)</span>
           </button>
         </div>
 
-        {/* Safety Filter Toggle Card */}
-        <div className="bg-[#141416] p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl flex items-center justify-between">
-          <div>
-            <h3 className="font-extrabold text-sm md:text-base text-neutral-200">성인 소설 컨텐츠 활성화</h3>
-            <p className="text-[11px] text-neutral-400 mt-1 max-w-[280px] md:max-w-md">당당하고 수위가 높은 원작 시나리오의 성인 캐릭터 및 19세 웹소설 세계관을 보드에 필터링합니다.</p>
-          </div>
-          <button
-            onClick={handleSafetyToggle}
-            className={`relative w-14 h-7 rounded-full p-1 cursor-pointer transition-colors duration-300 ${
-              userState.unlockedAdult ? "bg-[#ff3a54]" : "bg-neutral-700"
-            }`}
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full transition-transform duration-300 ${
-                userState.unlockedAdult ? "translate-x-7" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
+      </div>
 
-        {/* Informative Stats */}
+      <div className="space-y-6 mt-6">
         <div className="bg-[#141416]/50 p-5 md:p-6 rounded-2xl border border-neutral-800/60 shadow-xl">
           <h3 className="font-extrabold text-sm md:text-base text-neutral-200 mb-4">내 활동 기록 분석</h3>
           <div className="grid grid-cols-3 gap-3 text-center">

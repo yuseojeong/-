@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Character, UserState } from "../types";
-import { Award, Trophy, Eye, MessageSquare, Heart, Play } from "lucide-react";
+import { Award, Trophy, Eye, MessageSquare, Heart, Play, HelpCircle } from "lucide-react";
 import { getAvatarColor, getGenreKorean } from "../utils";
 import { motion } from "motion/react";
 
@@ -13,6 +13,7 @@ interface RankingProps {
 export default function Ranking({ characters, userState, onSelectCharacter }: RankingProps) {
   const [sortedCharacters, setSortedCharacters] = useState<Character[]>([]);
   const [activeTab, setActiveTab] = useState<"views" | "chats" | "likes">("chats");
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     // Parse values to floats for accurate sort
@@ -38,20 +39,46 @@ export default function Ranking({ characters, userState, onSelectCharacter }: Ra
 
   return (
     <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-6 md:py-10 select-none pb-24">
-      {/* Page Title Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-yellow-500/10 text-yellow-500">
-            <Trophy className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <h1 className="text-lg md:text-2xl font-black text-white tracking-tight">실시간 캐릭터 랭킹</h1>
-            <p className="text-xs md:text-sm text-neutral-400 mt-1">매일 오전 6시에 업데이트됩니다. (5/26~6/8)</p>
+      {/* Title & Description Header Text Only */}
+      <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 pb-3 border-b border-neutral-900/40">
+        <div className="relative z-10 flex flex-col justify-center gap-1">
+          <h2 className="text-[#eee] font-black text-xl md:text-3xl tracking-tight leading-none mb-2">실시간 캐릭터 랭킹</h2>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm text-neutral-400 tracking-tight leading-relaxed max-w-none">
+              매일 오전 6시에 업데이트됩니다. (5/26~6/8)
+            </p>
+            <div className="relative inline-block">
+              <button
+                type="button"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={() => setShowTooltip(!showTooltip)}
+                className="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all focus:outline-none cursor-pointer"
+                aria-label="랭킹 정책 안내"
+              >
+                <HelpCircle className="w-4 h-4 text-neutral-500 hover:text-[#7632ff] transition-colors" />
+              </button>
+              
+              {showTooltip && (
+                <div className="absolute left-0 top-full mt-2 w-72 p-4 bg-[#141416]/95 backdrop-blur border border-neutral-800 rounded-xl shadow-2xl z-50 text-xs text-neutral-300 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="font-extrabold text-[#7632ff] mb-2 flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>실시간 랭킹 산정 원칙</span>
+                  </div>
+                  <ul className="space-y-1.5 leading-relaxed font-medium">
+                    <li><strong className="text-white font-semibold">대화 많은 순 :</strong> 캐릭터들과의 대화 로그 수 및 활성 채팅 지수를 반영합니다.</li>
+                    <li><strong className="text-white font-semibold">조회 높은 순 :</strong> 상세 정보 방문 횟수 및 탐색 트래픽을 적용합니다.</li>
+                    <li><strong className="text-white font-semibold">추천 많은 순 :</strong> 팬분들이 부여한 즐겨찾기(하트) 누적 수를 기반합니다.</li>
+                  </ul>
+                  <p className="mt-3 pt-2 border-t border-neutral-800/60 text-[10px] text-neutral-500 font-semibold text-right">매일 오전 6시 일괄 갱신처리</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex bg-[#111] border border-neutral-800 p-1 rounded-xl">
+        <div className="flex bg-[#111] border border-neutral-800 p-1 rounded-xl self-start md:self-auto shrink-0">
           <button
             onClick={() => setActiveTab("chats")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${

@@ -83,13 +83,11 @@ export default function ChatList({
   return (
     <div className="w-full max-w-[840px] mx-auto px-4 py-6 md:py-10 flex flex-col gap-6 md:gap-8 select-none">
       
-      {/* Page Title Header */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 rounded-xl bg-[#7632ff]/10 text-[#7632ff]">
-          <MessageSquare className="w-5 h-5 animate-pulse" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">지금 하고 있는 채팅</h1>
+      {/* Title & Description Header Text Only */}
+      <div className="relative flex flex-col justify-center gap-2 py-2 px-1 mb-2 pb-3 border-b border-neutral-900/40">
+        <div className="relative z-10">
+          <h2 className="text-[#eee] font-black text-xl md:text-3xl tracking-tight leading-none mb-2">지금 하고 있는 채팅</h2>
+          <p className="text-sm text-neutral-400 tracking-tight leading-relaxed max-w-none">최근 나눈 대화 기록을 모아보고 대화를 이어가거나 초기화할 수 있는 나만의 대화함</p>
         </div>
       </div>
 
@@ -263,7 +261,7 @@ export default function ChatList({
               whileHover={{ y: -6, scale: 1.01 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               onClick={() => onSelectCharacter(char.id)}
-              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl h-[220px] md:h-[260px]"
+              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl aspect-[2/3] w-full"
             >
               {/* Full Background Image */}
               {char.avatar ? (
@@ -316,7 +314,7 @@ export default function ChatList({
               </div>
 
               {/* Overlaid Content Metadata Container */}
-              <div className="relative z-20 p-3.5 flex flex-col justify-end w-full">
+              <div className="relative z-20 p-3.5 flex flex-col justify-end w-full overflow-hidden">
                 <div>
                   <h4 className="font-extrabold text-xs md:text-base text-neutral-100 group-hover:text-[#b9adff] transition-colors truncate">
                     {char.name}
@@ -328,15 +326,15 @@ export default function ChatList({
                 </div>
 
                 {/* Concept Chip (Moved from first div) */}
-                <div className="mt-1.5 flex flex-wrap gap-1 justify-start">
+                <div className="mt-1.5 flex flex-row flex-nowrap gap-1 justify-start overflow-x-auto scrollbar-none whitespace-nowrap w-full">
                   {char.tags && char.tags.length > 0 ? (
                     char.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                      <span key={tag} className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                    <span className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                       #{getGenreKorean(char.genre)}
                     </span>
                   )}

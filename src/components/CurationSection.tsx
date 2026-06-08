@@ -107,7 +107,7 @@ export default function CurationSection({
               whileHover={{ y: -6, scale: 1.01 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               onClick={() => onSelectCharacter(c.id)}
-              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl h-[245px] md:h-[290px]"
+              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl aspect-[2/3] w-full"
             >
               
               {/* Full Background Image */}
@@ -181,15 +181,15 @@ export default function CurationSection({
                 </div>
 
                 {/* Concept Chip (Moved from first div) */}
-                <div className="mt-1.5 flex flex-wrap gap-1 justify-start">
+                <div className="mt-1.5 flex flex-row flex-nowrap gap-1 justify-start overflow-x-auto scrollbar-none whitespace-nowrap">
                   {c.tags && c.tags.length > 0 ? (
                     c.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                      <span key={tag} className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                    <span className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                       #{getGenreKorean(c.genre)}
                     </span>
                   )}

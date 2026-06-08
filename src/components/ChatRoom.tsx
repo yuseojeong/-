@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Trash2, Coins, CreditCard, ChevronLeft, ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, ShieldAlert } from "lucide-react";
+import { Send, Trash2, Coins, CreditCard, ChevronLeft, ArrowLeft, RefreshCw, AlertTriangle, MessageSquare, ShieldAlert, Settings } from "lucide-react";
 import { Character, Message, UserState } from "../types";
 import { loadChatHistory, saveChatHistory, clearChatHistory, getAvatarColor } from "../utils";
 import { motion } from "motion/react";
@@ -166,237 +166,255 @@ export default function ChatRoom({
     }
   };
 
-  return (
-    <div className="flex-1 flex flex-col md:flex-row h-[calc(100vh-64px)] md:h-[calc(100vh-90px)] overflow-hidden bg-[#020202] text-white select-none">
-      
-      {/* LEFT COLUMN: Channels/Chat Rooms Sidebar selection list (shown on md+ screens) */}
-      <div className="hidden lg:flex w-[260px] md:w-[320px] bg-[#141414] border-r border-[#222]/55 flex-col flex-shrink-0 justify-between">
-        <div>
-          <div className="p-4 md:p-5 border-b border-[#222]/55">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-extrabold text-[#999] tracking-tight">대화 중인 캐릭터</span>
-              <span className="text-[10px] bg-[#7632ff]/10 text-[#7632ff] border border-[#7632ff]/30 px-1.5 py-0.5 rounded-full font-bold">ACTIVE</span>
-            </div>
+  const recentChatItems = [
+    { id: "row1", name: "테스트123_유서정", message: "“야, 너 지금 누구더러 모른 척...”", tag: "CAMPUS", charId: "amelia" },
+    { id: "row2", name: "테스트_윤수아", message: "“저... 오늘 밤엔 그냥 모르는 척...”", tag: "CAMPUS", charId: "sooa" },
+    { id: "row3", name: "테스트123_오하나", message: "“방문 잠그고 혼자 뭐하는 거야?”", tag: "CAMPUS", charId: "ohhana" },
+    { id: "row4", name: "테스트_한새벽", message: "“씨, 시끄러워! 바보 같이 그렇게...”", tag: "ACADEMY", charId: "saebyeok" },
+    { id: "row5", name: "테스트_이주하", message: "“진짜... 부탁이니까 제발... 이번...”", tag: "HYPNOSIS", charId: "juha" },
+  ];
+
+  const parseAndRenderMessage = (text: string, isUser: boolean, charName: string, timestamp: string) => {
+    if (isUser) {
+      return (
+        <div className="flex flex-col gap-1 items-end max-w-[85%] ml-auto my-1">
+          <div className="flex items-center gap-1.5 mr-1 text-[10px] text-neutral-500 font-bold">
+            <span>자네 (나)</span>
+            <span>•</span>
+            <span>{timestamp}</span>
           </div>
-          <div className="p-3 flex flex-col gap-2 max-h-[calc(100vh-240px)] overflow-y-auto scrollbar-none">
-            {characters
-              .filter((item) => item.id === activeChar.id || loadChatHistory(item.id).length > 0)
-              .map((item) => {
-                const isActive = item.id === activeChar.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onSelectCharacter(item.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left border ${
-                      isActive ? "bg-neutral-800/80 border-[#7632ff]/30" : "bg-[#1c1c1f]/40 hover:bg-[#1c1c1f]/80 border-transparent"
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-tr ${getAvatarColor(item.id)} overflow-hidden relative shrink-0 p-[1.5px]`}>
-                      {item.avatar ? (
-                        <img
-                          src={item.avatar}
-                          alt={item.name}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#111] rounded-full flex items-center justify-center font-bold text-xs text-neutral-300 font-mono">
-                          {item.name.slice(0, 1)}
-                        </div>
-                      )}
+          <div className="bg-[#7632ff] text-white p-3 md:p-3.5 rounded-2xl rounded-tr-none text-xs md:text-sm shadow-md font-sans leading-relaxed select-text tracking-tight break-all">
+            {text}
+          </div>
+        </div>
+      );
+    }
+
+    const lines = text.split("\n").filter((line) => line.trim().length > 0);
+
+    return (
+      <div className="flex flex-col gap-3.5 w-full my-2 text-left">
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          const isDialogue = trimmed.includes('"') || trimmed.includes('“') || trimmed.includes('”') || trimmed.startsWith('“') || trimmed.startsWith('"');
+
+          if (isDialogue) {
+            return (
+              <div key={idx} className="flex gap-3 mt-4 first:mt-0 items-start max-w-[95%]">
+                {/* Character Avatar */}
+                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${getAvatarColor(activeChar.id)} overflow-hidden shrink-0 p-[1.5px] shadow-md`}>
+                  {activeChar.avatar ? (
+                    <img
+                      src={activeChar.avatar}
+                      alt={activeChar.name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#111] rounded-full flex items-center justify-center font-extrabold text-[10px] text-neutral-300 font-mono">
+                      {activeChar.name.slice(0, 1)}
                     </div>
-                    <div className="truncate">
-                      <div className="flex justify-between items-center gap-1.5">
-                        <span className="font-extrabold text-xs text-neutral-200">{item.name}</span>
-                        {item.isAdult && <span className="text-[8.5px] bg-[#ff3a54] text-white px-1.2 py-0.2 rounded-sm font-bold shrink-0">19</span>}
-                      </div>
-                      <p className="text-[10px] text-neutral-500 truncate">{item.tagline}</p>
-                    </div>
-                  </button>
-                );
-              })}
+                  )}
+                </div>
+
+                {/* Message body */}
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <span className="text-[13px] font-black text-neutral-200 tracking-tight">
+                    {charName}
+                  </span>
+                  <div className="bg-[#131116] border border-neutral-800/50 p-4 rounded-xl text-[13.5px] md:text-sm text-neutral-100 font-sans leading-relaxed shadow-lg shadow-black/25 select-text tracking-tight break-all max-w-fit">
+                    {trimmed}
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <p key={idx} className="text-[13.5px] md:text-[14px] font-normal text-neutral-400 font-sans leading-relaxed my-3 px-12 tracking-tight select-text">
+                {trimmed}
+              </p>
+            );
+          }
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex-grow flex flex-col h-screen overflow-hidden bg-[#020202] text-white select-none items-center justify-center">
+      <div className="w-full max-w-[1440px] h-full flex flex-col bg-[#0c0c0e] border-x border-[#151517] shadow-2xl relative overflow-hidden">
+      
+      {/* Unified Top Header Bar */}
+      <div className="h-[58px] bg-[#09090b] border-b border-[#151517] px-4 md:px-6 flex items-center justify-between shrink-0 select-none">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBackToHome}
+            className="p-2 rounded-lg bg-neutral-900 border border-neutral-800/80 text-neutral-300 hover:text-white hover:bg-neutral-850 cursor-pointer transition-all flex items-center justify-center shrink-0 animate-fade-in"
+            title="뒤로가기"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <span className="font-bold sm:font-black text-sm md:text-base text-neutral-100 tracking-tight">{activeChar.name}</span>
+          
+          {/* Premium Purple episode indicator capsule */}
+          <div className="flex items-center gap-1 bg-[#7632ff]/10 border border-[#7632ff]/30 px-2 py-0.5 rounded-full text-[#7632ff] text-[10px] sm:text-[11px] font-black h-fit">
+            <span>🔓 1/1</span>
+            <div className="w-12 h-1 bg-[#7632ff]/30 rounded-full overflow-hidden ml-1 hidden sm:block">
+              <div className="w-full h-full bg-[#7632ff]"></div>
+            </div>
+            <span className="text-[8px] text-[#7632ff]/80 ml-1">◀ ▶</span>
           </div>
         </div>
 
-        {/* Bottom add chat navigation connector */}
-        <div className="p-4 border-t border-[#222]/55">
-          <button
-            onClick={onBackToHome}
-            className="w-full bg-[#1b1b1e] hover:bg-neutral-800 border border-neutral-800/80 hover:border-neutral-700 text-neutral-300 hover:text-white text-xs font-bold py-3 px-4 h-11 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <span>← 대화 목록으로 가기</span>
+        <div className="flex items-center gap-3">
+          {/* Wallet summary button list presenting tickets and coins with actual images from main home */}
+          <div className="flex items-center gap-3.5 bg-[#111] border border-[#222] px-4 py-1.5 rounded-full shadow-inner select-none font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
+              <img src="//images.novelpia.com/img/new/chat/icon_chat_ticket.svg" alt="챗티켓" className="w-4 h-4 object-contain" referrerPolicy="no-referrer" />
+              <span className="font-bold text-white text-xs">{userState.tickets}</span>
+              <span className="text-[10px] text-neutral-400 font-semibold">티켓</span>
+            </div>
+            <span className="w-[1px] h-3 bg-[#333]"></span>
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
+              <img src="//images.novelpia.com/img/new/chat/sidemenu/icon-coin_.svg" alt="코인" className="w-4 h-4 object-contain" referrerPolicy="no-referrer" />
+              <span className="font-bold text-white text-xs">{userState.coins}</span>
+              <span className="text-[10px] text-neutral-400 font-semibold">코인</span>
+            </div>
+          </div>
+          
+          {/* Settings block */}
+          <button className="p-2 rounded-full bg-[#111114] border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white transition-all cursor-pointer">
+            <Settings className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Full Main Active Conversation Frame */}
-      <div className="flex-1 flex flex-col justify-between h-full bg-[#0d0d0f]">
+      {/* Content body layout split */}
+      <div className="flex-1 flex flex-row overflow-hidden">
         
-        {/* Header Information Bar */}
-        <div className="h-[55px] md:h-[65px] bg-[#141414]/90 backdrop-blur-md border-b border-[#222]/55 px-4 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Back Arrow to home listed on small screens */}
-            <button
-              onClick={onBackToHome}
-              className="lg:hidden p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            
-            {/* Name/Status */}
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarColor(activeChar.id)} overflow-hidden relative shrink-0 p-[1.5px]`}>
-                {activeChar.avatar ? (
-                  <img
-                    src={activeChar.avatar}
-                    alt={activeChar.name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#111] rounded-full flex items-center justify-center font-bold text-[11px] text-neutral-300 font-mono">
-                    {activeChar.name.slice(0, 1)}
-                  </div>
-                )}
-              </div>
-              <div className="leading-tight">
-                <span className="font-extrabold text-sm text-neutral-200 block md:inline">{activeChar.name}</span>
-                <span className="text-[10px] md:text-xs text-[#26eeb7] ml-0 md:ml-2 font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-[#26eeb7] rounded-full inline-block animate-pulse"></span>
-                  대화 중
-                </span>
-              </div>
-            </div>
+        {/* COLUMN 2: CENTER IMMERSIVE CHARACTER PORTRAIT (Proportioned to 45% matching the screenshot layout) */}
+        <div className="hidden md:block w-[45%] max-w-[540px] xl:max-w-[580px] shrink-0 border-r border-[#151517] relative bg-[#060608] overflow-hidden">
+          <img
+            src={activeChar.avatar}
+            alt={activeChar.name}
+            className="w-full h-full object-cover object-top"
+            referrerPolicy="no-referrer"
+          />
+          
+          {/* Circular purple reload/swap icon on the top-left of portrait as in screenshot preview */}
+          <button
+            type="button"
+            onClick={() => alert("사이드 스토리 및 일러스트 의상 전환")}
+            className="absolute top-4 left-4 w-9 h-9 bg-black/45 hover:bg-black/70 border border-white/5 text-[#7632ff] hover:text-[#9e8ac7] rounded-full flex-shrink-0 flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer z-10"
+            title="의상 전환 / 일러스트 리로드"
+          >
+            <RefreshCw className="w-4.5 h-4.5" />
+          </button>
+
+          {/* Page block details on the top-right of portrait as in screenshot preview */}
+          <div className="absolute top-4 right-4 flex items-center gap-1 bg-black/45 border border-white/5 px-2.5 py-1 rounded-lg text-[10.5px] text-neutral-300 font-bold select-none z-10">
+            <ChevronLeft className="w-3.5 h-3.5 cursor-pointer hover:text-white" />
+            <span className="px-1 text-[10px] tracking-tight">단편 1/1</span>
+            <ChevronLeft className="w-3.5 h-3.5 rotate-180 cursor-pointer hover:text-white" />
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Connection Indicator badge for diagnostic integrity */}
-            <span className={`text-[9px] font-black uppercase border px-2 py-0.5 rounded-full hidden sm:inline ${
-              connectionStatus === "online" 
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                : connectionStatus === "connecting"
-                ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
-                : "bg-red-500/10 text-red-400 border-red-500/20"
-            }`}>
-              {connectionStatus === "online" ? "● Gemini AI" : connectionStatus === "connecting" ? "Con Connecting..." : "LOCAL CHATPRO"}
-            </span>
-
-            {/* Clear conversation action button */}
-            <button
-              onClick={handleClearChat}
-              className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/60 transition-colors cursor-pointer"
-              title="채팅방 밀어버리기"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Cinematic shadow background overlay gradient masks */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#09090b]/60 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0c0c0e]/95 via-[#0c0c0e]/60 to-transparent" />
         </div>
 
-        {/* Warning notification banner details */}
-        <div className="bg-[#111] border-b border-[#222]/55 px-4 py-2 flex items-center justify-between text-[11px] text-[#999] shrink-0 font-medium">
-          <div className="flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-[#7632ff]/80" />
-            <span>메시지 송신 한 번당 <span className="font-bold text-white">1 챗티켓</span> 또는 <span className="font-bold text-white">1 코인</span>이 차감됩니다.</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="flex items-center gap-0.5"><CreditCard className="w-2.5 h-2.5 text-[#7632ff]" /> {userState.tickets}T</span>
-            <span className="flex items-center gap-0.5"><Coins className="w-2.5 h-2.5 text-[#3a5cff]" /> {userState.coins}C</span>
-          </div>
-        </div>
-
-        {/* Chat Messages Log Frame */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-none bg-[#0a0a0c]">
-          {messages.map((m) => {
-            const isUser = m.sender === "user";
-            return (
-              <div key={m.id} className={`flex gap-3 max-w-[85%] ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}>
-                
-                {/* Character avatar beside chat bubble */}
-                {!isUser && (
-                  <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarColor(activeChar.id)} overflow-hidden relative shrink-0 p-[1.5px] self-end`}>
-                    {activeChar.avatar ? (
-                      <img
-                        src={activeChar.avatar}
-                        alt={activeChar.name}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#111] rounded-full flex items-center justify-center font-extrabold text-[10px] text-neutral-300 font-mono">
-                        {activeChar.name.slice(0, 1)}
-                      </div>
-                    )}
+        {/* COLUMN 3: RIGHT SCROLLABLE DIALOGUE CONTAINER */}
+        <div className="flex-1 flex flex-col justify-between h-full overflow-hidden bg-[#0c0c0e] relative">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 scrollbar-none bg-[#0a0a0c]">
+              {messages.map((m) => {
+                const isUser = m.sender === "user";
+                return (
+                  <div key={m.id} className="w-full">
+                    {parseAndRenderMessage(m.text, isUser, activeChar.name, m.timestamp)}
                   </div>
-                )}
+                );
+              })}
 
-                {/* Actual dialogue text bubble container frame */}
-                <div className="flex flex-col gap-0.5">
-                  <div className={`p-3 px-4 rounded-2xl text-base leading-relaxed ${
-                    isUser
-                      ? "bg-[#7632ff]/90 text-white rounded-br-none"
-                      : "bg-[#1c1c1f] text-neutral-100 border border-neutral-800/70 rounded-bl-none"
-                  }`}>
-                    {/* Preserve custom bullet markers / whitespace linebreaks */}
-                    <div className="whitespace-pre-wrap">{m.text}</div>
-                  </div>
-                  {/* Timestamp details */}
-                  <span className={`text-[9.5px] text-neutral-500 mt-0.5 ${isUser ? "text-right" : "text-left"}`}>
-                    {m.timestamp}
+              {/* Typing loader component */}
+              {isTyping && (
+                <div className="flex flex-col gap-1.5 max-w-[80%] my-2 text-left">
+                  <span className="text-[11px] font-black text-neutral-400 tracking-tight flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-neutral-500 rounded-full animate-ping"></span>
+                    {activeChar.name} 대답 구상 중...
                   </span>
-                </div>
-
-              </div>
-            );
-          })}
-
-          {/* Character Thinking / Typing Action Loader state */}
-          {isTyping && (
-            <div className="flex gap-3 max-w-[80%] mr-auto items-end">
-              <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarColor(activeChar.id)} overflow-hidden relative shrink-0 p-[1.5px]`}>
-                {activeChar.avatar ? (
-                  <img
-                    src={activeChar.avatar}
-                    alt={activeChar.name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#111] rounded-full flex items-center justify-center font-bold text-[10px] text-neutral-300 font-mono">
-                    {activeChar.name.slice(0, 1)}
+                  <div className="bg-[#131116]/80 border border-neutral-850 p-4 rounded-xl rounded-tl-none font-sans flex items-center gap-1 text-xs text-neutral-400 shadow-md">
+                    <span className="w-1.5 h-1.5 bg-[#7632ff] rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-[#3a5cff] rounded-full animate-bounce delay-100"></span>
+                    <span className="w-1.5 h-1.5 bg-[#28f5b4] rounded-full animate-bounce delay-200"></span>
                   </div>
-                )}
-              </div>
-              <div className="bg-[#1c1c1f] px-3.5 py-3 rounded-2xl rounded-bl-none text-neutral-400 border border-neutral-800 text-xs sm:text-sm font-medium flex items-center gap-1 px-4">
-                <span>{activeChar.name} 대답 구상 중</span>
-                <span className="w-1.5 h-1.5 bg-[#7632ff] rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-[#3a5cff] rounded-full animate-bounce delay-100"></span>
-                <span className="w-1.5 h-1.5 bg-[#28f5b4] rounded-full animate-bounce delay-200"></span>
-              </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
-          )}
 
-          <div ref={messagesEndRef} />
-        </div>
+            {/* MESSAGE INPUT CONSOLE */}
+            <div className="p-3 md:p-4 bg-[#0d0d0f] border-t border-[#1a1a1d] shrink-0">
+              <form onSubmit={handleSendMessage} className="max-w-[850px] mx-auto">
+                <div className="bg-[#141416] border border-neutral-800/80 rounded-2xl p-2.5 flex flex-col gap-2 shadow-2xl">
+                  {/* Input row */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder={`${activeChar.name}에게 메시지 보내기`}
+                      disabled={isTyping}
+                      className="flex-grow bg-transparent text-neutral-200 placeholder-neutral-500 text-xs md:text-sm font-sans focus:outline-none px-2 py-1"
+                    />
+                    
+                    {/* Purple solid icon send button */}
+                    <button
+                      type="submit"
+                      disabled={!inputText.trim() || isTyping}
+                      className="w-9 h-9 bg-[#7632ff] hover:bg-[#8e52ff] disabled:opacity-30 disabled:cursor-not-allowed rounded-full flex items-center justify-center text-white shrink-0 shadow-lg active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  </div>
 
-        {/* Typing message Input Form */}
-        <div className="p-3 md:p-4 bg-[#141414]/90 border-t border-[#222]/55 shrink-0">
-          <form onSubmit={handleSendMessage} className="max-w-[1000px] mx-auto flex gap-2">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={`${activeChar.name}(이)가 기다리고 있습니다... 대화를 입력하세요.`}
-              disabled={isTyping}
-              className="flex-1 h-11 md:h-12 bg-neutral-900 border border-neutral-800/80 rounded-xl px-4 text-xs md:text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-[#7632ff]/60 disabled:opacity-40"
-            />
-            <button
-              type="submit"
-              disabled={!inputText.trim() || isTyping}
-              className="w-11 md:w-12 h-11 md:h-12 bg-[#7632ff] hover:opacity-90 rounded-xl flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-[#7632ff]/10 active:scale-95 transition-all cursor-pointer border border-transparent hover:border-white/10"
-            >
-              <Send className="w-4 h-4 ml-0.5" />
-            </button>
-          </form>
+                  {/* Action Chips row */}
+                  <div className="flex items-center flex-wrap gap-1.5 pt-1.5 border-t border-[#1a1a1d] text-[10px] md:text-xs">
+                    {/* Chip 1 */}
+                    <button
+                      type="button"
+                      onClick={() => setInputText((prev) => prev + " *물끄러미 쳐다본다*")}
+                      className="bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white px-2.5 py-1 rounded-lg border border-neutral-800/80 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+                    >
+                      <span>* 상황묘사</span>
+                    </button>
+                    {/* Chip 2 */}
+                    <button
+                      type="button"
+                      onClick={() => setInputText("정말 동거인으로 들어오는 거야?")}
+                      className="bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white px-2.5 py-1 rounded-lg border border-neutral-800/80 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+                    >
+                      <span>✨ 추천답변</span>
+                    </button>
+                    {/* Chip 3 */}
+                    <span className="bg-neutral-900 text-[#7632ff] px-2.5 py-1 rounded-lg border border-[#7632ff]/20 flex items-center gap-1 select-none font-bold">
+                      <span>🚀 피아챗 v</span>
+                    </span>
+                    
+                    {/* Spacer */}
+                    <div className="flex-grow" />
+
+                    {/* Tokens count */}
+                    <span className="text-[10px] text-neutral-500 font-extrabold flex items-center gap-1 px-1">
+                      1회 전송당 1티켓/코인 차감
+                    </span>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+          </div>
+
         </div>
 
       </div>

@@ -26,14 +26,11 @@ export default function Favorite({ characters, userState, onUpdateUserState, onS
   return (
     <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-6 md:py-10 select-none pb-24">
       
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 rounded-xl bg-blue-500/10 text-[#3a5cff]">
-          <Star className="w-5 h-5 fill-current animate-spin-slow" />
-        </div>
-        <div>
-          <h1 className="text-lg md:text-2xl font-black text-white tracking-tight">내 즐겨찾기</h1>
-          <p className="text-xs md:text-sm text-neutral-400 mt-1">대화를 계속 이어가고 싶거나 애끼는 소중한 AI 파트너 콜렉션</p>
+      {/* Title & Description Header Text Only */}
+      <div className="relative flex flex-col justify-center gap-2 py-2 px-1 mb-8 pb-3 border-b border-neutral-900/40">
+        <div className="relative z-10">
+          <h2 className="text-[#eee] font-black text-xl md:text-3xl tracking-tight leading-none mb-2">내 즐겨찾기</h2>
+          <p className="text-sm text-neutral-400 tracking-tight leading-relaxed max-w-none">대화를 계속 이어가고 싶거나 애끼는 소중한 AI 파트너 콜렉션</p>
         </div>
       </div>
 
@@ -61,7 +58,7 @@ export default function Favorite({ characters, userState, onUpdateUserState, onS
               whileHover={{ y: -6, scale: 1.01 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               onClick={() => onSelectCharacter(c.id)}
-              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl h-[245px] md:h-[290px]"
+              className="group relative cursor-pointer bg-[#141416] rounded-2xl border border-neutral-900 hover:border-[#7c6cff]/30 overflow-hidden flex flex-col justify-end shadow-xl aspect-[2/3] w-full"
             >
               
               {/* Full Background Image */}
@@ -136,15 +133,15 @@ export default function Favorite({ characters, userState, onUpdateUserState, onS
                 </div>
 
                 {/* Concept Chip */}
-                <div className="mt-1.5 flex flex-wrap gap-1 justify-start">
+                <div className="mt-1.5 flex flex-row flex-nowrap gap-1 justify-start overflow-x-auto scrollbar-none whitespace-nowrap">
                   {c.tags && c.tags.length > 0 ? (
                     c.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                      <span key={tag} className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[9px] md:text-[12px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1 md:px-2 py-0.5 rounded-full inline-block">
+                    <span className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
                       #{getGenreKorean(c.genre)}
                     </span>
                   )}

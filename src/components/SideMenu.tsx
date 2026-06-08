@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Settings, Coins, CreditCard, Heart, Star, Trophy, MessageSquare, LogOut, RefreshCw, EyeOff, Eye } from "lucide-react";
+import { X, Settings, Coins, CreditCard, Heart, Star, Trophy, LogOut, RefreshCw, EyeOff, Eye } from "lucide-react";
 import { UserState } from "../types";
 
 interface SideMenuProps {
@@ -7,7 +7,7 @@ interface SideMenuProps {
   onClose: () => void;
   userState: UserState;
   onUpdateUserState: (state: UserState) => void;
-  onNavigate: (view: "home" | "chat" | "ranking" | "favorite" | "myinfo") => void;
+  onNavigate: (view: "home" | "explore" | "chat" | "ranking" | "favorite" | "myinfo") => void;
 }
 
 export default function SideMenu({ isOpen, onClose, userState, onUpdateUserState, onNavigate }: SideMenuProps) {
@@ -38,145 +38,108 @@ export default function SideMenu({ isOpen, onClose, userState, onUpdateUserState
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] overflow-hidden select-none">
+    <div className="fixed inset-0 z-[250] overflow-hidden select-none">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[4px] transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Drawer */}
-      <div className="absolute top-0 right-0 bottom-0 w-full max-w-[380px] bg-[#171717] border-l border-[#303030] shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-350 ease-out text-[#eee]">
+      {/* Far-Right Dropdown Modal Popup */}
+      <div className="absolute top-[72px] right-4 md:top-[96px] md:right-8 w-[calc(100%-32px)] sm:w-full sm:max-w-[380px] bg-[#121214] border border-[#232326] rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.75)] flex flex-col justify-between animate-in fade-in slide-in-from-top-6 duration-250 text-[#eee] p-6 z-[251]">
         
-        {/* Upper wrapper panel */}
-        <div className="p-5 md:p-6 overflow-y-auto flex-1 scroll-none">
-          
-          {/* Header Controls */}
-          <div className="flex items-center justify-end pb-4 border-b border-[#303030]">
-            {/* General Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  onNavigate("myinfo");
-                  onClose();
-                }}
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-[#222] transition-colors cursor-pointer"
-                title="내 정보 설정"
-              >
-                <Settings className="w-4 h-4 text-neutral-300" />
-              </button>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-[#222] transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4 text-neutral-300" />
-              </button>
-            </div>
-          </div>
+        {/* Header Controls */}
+        <div className="flex items-center justify-between pb-4">
+          {/* Adult Safe Filter Setting Toggle (19+) pill on Left */}
+          <button
+            onClick={toggleAdultMode}
+            className={`relative px-3.5 py-1.5 rounded-full flex items-center gap-2 transition-all duration-300 font-extrabold text-[12px] cursor-pointer ${
+              userState.unlockedAdult
+                ? "bg-[#714fff] text-white"
+                : "bg-neutral-800 text-neutral-400 border border-neutral-700/60"
+            }`}
+          >
+            <span>성인</span>
+            <div className={`w-3.5 h-3.5 rounded-full bg-white transition-all transform shadow ${
+              userState.unlockedAdult ? "translate-x-0 bg-white" : "opacity-40"
+            }`} />
+          </button>
 
-          {/* Profile Section */}
-          <div className="flex items-center gap-4 mt-6">
-            <div className="relative w-[60px] h-[60px] rounded-full bg-gradient-to-tr from-[#3a5cff] to-[#28f5b4] p-0.5 shadow-lg">
-              <div className="w-full h-full bg-[#111] rounded-full overflow-hidden flex items-center justify-center">
-                <span className="text-xl font-bold text-white">{userState.nickname.slice(0, 1)}</span>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h4 className="font-bold text-lg text-white">{userState.nickname}</h4>
-                <span className="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.2 rounded-full">
-                  플래티넘 독자
-                </span>
-              </div>
-              <p className="text-xs text-[#999] mt-0.5">NovelChat Premium Member</p>
-            </div>
-          </div>
-
-          {/* Held Currency (코인 / 챗티켓) */}
-          <div className="mt-8">
-            <div className="text-xs font-semibold text-[#888] mb-2.5">내 보유 자산</div>
-            <div className="flex gap-2">
-              <div className="flex-1 bg-[#222] rounded-xl p-3 border border-[#303030] flex flex-col justify-between h-[75px]">
-                <div className="flex items-center gap-1.5 text-xs text-[#999] font-medium">
-                  <Coins className="w-4 h-4 text-[#3a5cff]" />
-                  <span>코인</span>
-                </div>
-                <div className="text-right text-base font-bold text-white">{userState.coins} <span className="text-xs font-normal text-[#999]">코인</span></div>
-              </div>
-              <div className="flex-1 bg-[#222] rounded-xl p-3 border border-[#303030] flex flex-col justify-between h-[75px]">
-                <div className="flex items-center gap-1.5 text-xs text-[#999] font-medium">
-                  <CreditCard className="w-4 h-4 text-[#7632ff]" />
-                  <span>챗티켓</span>
-                </div>
-                <div className="text-right text-base font-bold text-white">{userState.tickets} <span className="text-xs font-normal text-[#999]">티켓</span></div>
-              </div>
-            </div>
-
-            <button
-              onClick={rechargeCoins}
-              className="w-full mt-4 h-12 bg-gradient-to-r from-[#7632ff] to-[#3a5cff] hover:opacity-95 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1.5 shadow-lg shadow-[#7632ff]/20 active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <Coins className="w-4 h-4 animate-bounce" />
-              <span>무료 코인 충전하기 (+50C)</span>
-            </button>
-          </div>
-
-          {/* Menu Links */}
-          <div className="mt-8 pt-6 border-t border-[#303030]/55 flex flex-col gap-1">
+          {/* General Actions on Right (Settings & Close) */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                onNavigate("chat");
+                onNavigate("myinfo");
                 onClose();
               }}
-              className="w-full flex items-center justify-between p-3.5 hover:bg-[#222]/80 rounded-xl transition-all cursor-pointer"
+              className="p-1.5 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              title="내 정보 설정"
             >
-              <div className="flex items-center gap-3 text-neutral-300">
-                <MessageSquare className="w-4.5 h-4.5 text-[#7632ff]" />
-                <span className="font-semibold text-sm">보유 중인 채팅방</span>
-              </div>
-              <span className="text-xs font-semibold text-[#999] bg-[#222] px-2 py-0.5 rounded-full">LIVE</span>
+              <Settings className="w-[18px] h-[18px]" />
             </button>
-
             <button
-              onClick={() => {
-                onNavigate("ranking");
-                onClose();
-              }}
-              className="w-full flex items-center justify-between p-3.5 hover:bg-[#222]/80 rounded-xl transition-all cursor-pointer"
+              onClick={onClose}
+              className="p-1.5 hover:bg-neutral-800 rounded-lg text-neutral-400 hover:text-white transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Trophy className="w-4.5 h-4.5 text-yellow-500" />
-                <span className="font-semibold text-sm">실시간 월드 랭킹</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                onNavigate("favorite");
-                onClose();
-              }}
-              className="w-full flex items-center justify-between p-3.5 hover:bg-[#222]/80 rounded-xl transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Star className="w-4.5 h-4.5 text-[#3a5cff]" />
-                <span className="font-semibold text-sm">내 즐겨찾기</span>
-              </div>
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Bottom wrapper panel */}
-        <div className="p-5 md:p-6 bg-[#111] border-t border-[#303030] flex flex-col gap-2.5">
+        {/* Profile Section */}
+        <div className="flex items-center gap-3.5 mt-3 px-1">
+          <div className="relative w-[68px] h-[68px] rounded-full bg-gradient-to-tr from-[#3a5cff] via-[#6f3bff] to-[#a026ff] p-[2px] shadow-lg flex-shrink-0">
+            <div className="w-full h-full bg-[#18181b] rounded-full overflow-hidden flex items-center justify-center border border-white/5">
+              <svg className="w-9 h-9 text-neutral-400 mt-1.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-extrabold text-[22px] text-white tracking-tight leading-none font-sans">
+              {userState.nickname}
+            </h4>
+          </div>
+        </div>
+
+        {/* Held Currency (코인 / 챗티켓) */}
+        <div className="mt-8">
+          <div className="text-[11px] font-extrabold text-neutral-400 mb-2.5 px-1 font-sans">보유 재화</div>
+          <div className="flex gap-2">
+            <div className="flex-1 bg-[#1e1e21] rounded-xl p-3.5 border border-neutral-800/40 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-extrabold font-sans">
+                <img src="//images.novelpia.com/img/new/chat/sidemenu/icon-coin_.svg" alt="코인" className="w-4 h-4 object-contain" referrerPolicy="no-referrer" />
+                <span>코인</span>
+              </div>
+              <div className="font-extrabold text-[#3a5cff] font-mono text-base">{userState.coins}</div>
+            </div>
+            <div className="flex-1 bg-[#1e1e21] rounded-xl p-3.5 border border-neutral-800/40 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-300 font-extrabold font-sans">
+                <img src="//images.novelpia.com/img/new/chat/icon_chat_ticket.svg" alt="챗티켓" className="w-4.5 h-4.5 object-contain" referrerPolicy="no-referrer" />
+                <span>챗티켓</span>
+              </div>
+              <div className="font-extrabold text-[#7632ff] font-mono text-base">{userState.tickets}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={rechargeCoins}
+            className="w-full mt-3 h-[48px] bg-[#1a284c] hover:bg-[#203464] active:scale-[0.99] transition-all rounded-xl font-bold text-[13px] text-sky-400 flex items-center justify-center cursor-pointer border border-[#1e346b]/40"
+          >
+            <span>코인 충전하기</span>
+          </button>
+        </div>
+
+
+
+        {/* Logout (Reset) Button */}
+        <div className="mt-8 flex justify-center w-full">
           <button
             onClick={handleResetData}
-            className="w-full h-11 bg-neutral-800 hover:bg-neutral-700/80 rounded-xl font-medium text-xs text-neutral-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full h-11 bg-[#1a1a1c] hover:bg-neutral-800 rounded-xl font-bold text-xs md:text-sm text-neutral-500 hover:text-neutral-300 flex items-center justify-center cursor-pointer transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-neutral-500" />
-            <span>임시 데이터 전체 초기화</span>
+            <span>로그아웃</span>
           </button>
-          <div className="text-center text-[10px] text-neutral-600">
-            Copyright © 노벨피아 2026. All Rights Reserved.
-          </div>
         </div>
 
       </div>

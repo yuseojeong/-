@@ -11,21 +11,38 @@ import Favorite from "./components/Favorite";
 import MyInfo from "./components/MyInfo";
 import CharacterDetail from "./components/CharacterDetail";
 import ChatList from "./components/ChatList";
+import LeftSidebar from "./components/LeftSidebar";
+import Explore from "./components/Explore";
+import { motion, AnimatePresence } from "motion/react";
 
 import { Character, UserState } from "./types";
 import { NOTICES, INITIAL_CHARACTERS } from "./data";
 import { loadUserState, saveUserState } from "./utils";
-import { Home, Trophy, MessageSquare, User, Instagram, Youtube, Heart, Coins } from "lucide-react";
+import { Home, Trophy, MessageSquare, User, Instagram, Youtube, Heart, Coins, Compass, Star } from "lucide-react";
 
 export default function App() {
   // Sync state
   const [userState, setUserState] = useState<UserState>(() => loadUserState());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeView, setActiveView] = useState<"home" | "chat" | "ranking" | "favorite" | "myinfo" | "detail">("home");
+  const [activeView, setActiveView] = useState<"home" | "explore" | "chat" | "ranking" | "favorite" | "myinfo" | "detail">("home");
   const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+  };
 
   // Sync back to localStorage as state coordinates update
   useEffect(() => {
@@ -60,19 +77,23 @@ export default function App() {
     }
   };
 
+  const isChatRoomFullscreen = activeView === "chat" && activeCharacterId !== null;
+
   return (
-    <div className={`min-h-screen bg-[#020202] text-[#e1e1e1] flex flex-col font-sans transition-all duration-300 pb-20 md:pb-0`}>
+    <div className={`min-h-screen bg-[#020202] text-[#e1e1e1] flex flex-col font-sans transition-all duration-300 ${isChatRoomFullscreen ? "pb-0" : "pb-20 md:pb-0"}`}>
       {/* 1. Nav header */}
-      <Header
-        userState={userState}
-        onOpenMenu={() => setIsMenuOpen(true)}
-        onNavigate={(view) => {
-          setActiveView(view);
-          setActiveCharacterId(null);
-        }}
-        activeView={activeView}
-        onUpdateUserState={handleUpdateUserState}
-      />
+      {!isChatRoomFullscreen && (
+        <Header
+          userState={userState}
+          onOpenMenu={() => setIsMenuOpen(true)}
+          onNavigate={(view) => {
+            setActiveView(view);
+            setActiveCharacterId(null);
+          }}
+          activeView={activeView}
+          onUpdateUserState={handleUpdateUserState}
+        />
+      )}
 
       {/* 2. Slide Drawer Menu Panel */}
       <SideMenu
@@ -86,8 +107,32 @@ export default function App() {
         }}
       />
 
-      {/* 3. Main Dashboard Frame Viewports */}
-      <main className="flex-grow pt-[64px] md:pt-[90px] flex flex-col">
+      {/* Main layout horizontal flow */}
+      <div className="flex flex-row flex-grow w-full min-h-0">
+        {/* Left Sidebar navigation rail */}
+        {!isChatRoomFullscreen && (
+          <LeftSidebar
+            activeView={activeView}
+            activeCharacterId={activeCharacterId}
+            onNavigate={(view) => {
+              setActiveView(view);
+              setActiveCharacterId(null);
+            }}
+            onSelectCharacterToChat={handleSelectCharacterToChat}
+            characters={INITIAL_CHARACTERS}
+            userState={userState}
+            onOpenStore={() => {
+              setIsMenuOpen(true);
+              setTimeout(() => {
+                triggerToast("상점 및 코인 충전 메뉴가 활성화되었습니다.");
+              }, 300);
+            }}
+            triggerToast={triggerToast}
+          />
+        )}
+
+        {/* 3. Main Dashboard Frame Viewports */}
+        <main className={`flex-grow flex flex-col min-w-0 ${isChatRoomFullscreen ? "pt-0 pb-0 h-screen overflow-hidden" : "pt-[64px] md:pt-[90px]"}`}>
         {activeView === "home" && (
           <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-6 md:gap-8 flex-1">
             {/* Featured banner Carousel */}
@@ -134,7 +179,7 @@ export default function App() {
               <>
                 {/* 1. New update world curation grid block */}
                 <CurationSection
-                  title="🔥 NEW 신규 차원 캐릭터 업데이트"
+                  title="신규 차원 캐릭터 업데이트"
                   characters={INITIAL_CHARACTERS}
                   category="new"
                   userState={userState}
@@ -144,7 +189,7 @@ export default function App() {
 
                 {/* 2. Best rating world curation block */}
                 <CurationSection
-                  title="👑 지금 가장 핫한 인기 캐릭터 부스"
+                  title="지금 가장 핫한 인기 캐릭터 부스"
                   characters={INITIAL_CHARACTERS}
                   category="best"
                   userState={userState}
@@ -154,7 +199,7 @@ export default function App() {
 
                 {/* 3. General list curation block */}
                 <CurationSection
-                  title="🏫 대학교 러블리 여사친 동거 섹션"
+                  title="대학교 러블리 여사친 동거 섹션"
                   characters={INITIAL_CHARACTERS}
                   category="genre"
                   filterGenre="CAMPUS"
@@ -165,7 +210,7 @@ export default function App() {
 
                 {/* 4. Alternate block */}
                 <CurationSection
-                  title="⚡ 최면과 일진들의 흔들거리는 지배 관계"
+                  title="최면과 일진들의 흔들거리는 지배 관계"
                   characters={INITIAL_CHARACTERS}
                   category="genre"
                   filterGenre="HYPNOSIS"
@@ -176,6 +221,15 @@ export default function App() {
               </>
             )}
           </div>
+        )}
+
+        {activeView === "explore" && (
+          <Explore
+            characters={INITIAL_CHARACTERS}
+            userState={userState}
+            onUpdateUserState={handleUpdateUserState}
+            onSelectCharacter={handleSelectCharacterToDetail}
+          />
         )}
 
         {activeView === "detail" && activeCharacterId && (
@@ -240,64 +294,95 @@ export default function App() {
           />
         )}
       </main>
+    </div>
 
       {/* 4. Mobile Bottom Navigation Drawer (Visible on narrow viewports) */}
-      <div className="fixed bottom-0 left-0 right-0 h-[58px] bg-[#1a1a1c]/95 backdrop-blur-md border-t border-[#303030]/60 flex items-center md:hidden z-[100] select-none text-[10px] text-neutral-400">
-        <button
-          onClick={() => {
-            setActiveView("home");
-            setActiveCharacterId(null);
-          }}
-          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeView === "home" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
-          }`}
-        >
-          <Home className="w-5 h-5" />
-          <span>홈</span>
-        </button>
+      {!isChatRoomFullscreen && (
+        <div className="fixed bottom-0 left-0 right-0 h-[58px] bg-[#1a1a1c]/95 backdrop-blur-md border-t border-[#303030]/60 flex items-center md:hidden z-[100] select-none text-[10px] text-neutral-400">
+          <button
+            onClick={() => {
+              setActiveView("home");
+              setActiveCharacterId(null);
+            }}
+            className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+              activeView === "home" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+            }`}
+          >
+            <Home className="w-5 h-5" />
+            <span>홈</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveView("ranking");
-            setActiveCharacterId(null);
-          }}
-          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeView === "ranking" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
-          }`}
-        >
-          <Trophy className="w-5 h-5" />
-          <span>랭킹</span>
-        </button>
+          <button
+            onClick={() => {
+              setActiveView("ranking");
+              setActiveCharacterId(null);
+            }}
+            className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+              activeView === "ranking" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+            }`}
+          >
+            <Trophy className="w-5 h-5" />
+            <span>랭킹</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveView("chat");
-            setActiveCharacterId(null);
-          }}
-          className={`relative flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeView === "chat" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
-          }`}
-        >
-          <MessageSquare className="w-5 h-5" />
-          <span>채팅</span>
-          {userState.tickets > 0 && (
-            <span className="absolute top-0 right-7 bg-[#7632ff] w-2 h-2 rounded-full animate-pulse"></span>
-          )}
-        </button>
+          <button
+            onClick={() => {
+              setActiveView("explore");
+              setActiveCharacterId(null);
+            }}
+            className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+              activeView === "explore" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+            }`}
+          >
+            <Compass className="w-5 h-5" />
+            <span>탐색</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setActiveView("myinfo");
-            setActiveCharacterId(null);
-          }}
-          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeView === "myinfo" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
-          }`}
-        >
-          <User className="w-5 h-5" />
-          <span>내정보</span>
-        </button>
-      </div>
+          <button
+            onClick={() => {
+              setActiveView("favorite");
+              setActiveCharacterId(null);
+            }}
+            className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+              activeView === "favorite" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+            }`}
+          >
+            <Star className="w-5 h-5" />
+            <span>즐찾</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveView("chat");
+              setActiveCharacterId(null);
+            }}
+            className={`relative flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+              activeView === "chat" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>대화</span>
+            {userState.tickets > 0 && (
+              <span className="absolute top-0 right-7 bg-[#7632ff] w-2 h-2 rounded-full animate-pulse"></span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Toast Notification Container */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-24 md:bottom-8 right-6 z-[200] max-w-sm bg-neutral-900/95 border border-neutral-800 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md"
+          >
+            <div className="w-2.5 h-2.5 bg-gradient-to-tr from-[#7632ff] to-[#9256ff] rounded-full animate-ping" />
+            <span className="text-xs font-black tracking-tight leading-tight">{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 5. Company info corporate Footer (Shown only if view is not chat fullscreen) */}
       {activeView !== "chat" && (

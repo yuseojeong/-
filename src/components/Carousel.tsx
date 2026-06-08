@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, Play, Eye, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Character } from "../types";
 import { getAvatarColor } from "../utils";
 
@@ -70,20 +70,20 @@ export default function Carousel({ characters, onSelectCharacter }: CarouselProp
               <img
                 src={activeChar.avatar}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover filter blur-xl opacity-30 object-center scale-105"
+                className="absolute inset-0 w-full h-full object-cover filter blur-2xl opacity-75 object-center scale-105"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className={`absolute inset-0 bg-gradient-to-tr ${getAvatarColor(activeChar.id)} filter blur-2xl opacity-40`} />
+              <div className={`absolute inset-0 bg-gradient-to-tr ${getAvatarColor(activeChar.id)} filter blur-2xl opacity-75`} />
             )}
-            {/* Dark vignette gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#020202] via-[#020202]/30 to-[#020202]/80 z-0" />
-            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#020202]/90 to-transparent z-0 hidden md:block" />
+            {/* Beautiful light and colored translucent gradient overlays to guarantee text legibility without crushing the background artwork */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#020202]/90 via-transparent to-black/10 z-0" />
+            <div className="absolute inset-y-0 left-0 w-full md:w-3/4 bg-gradient-to-r from-[#020202]/85 via-[#020202]/30 to-transparent z-0" />
           </motion.div>
         </AnimatePresence>
         
         {/* Subtle grid pattern over blurred wallpaper */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:30px_34px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:30px_34px] pointer-events-none"></div>
       </div>
 
       {/* Main Slideshow viewport */}
@@ -106,63 +106,26 @@ export default function Carousel({ characters, onSelectCharacter }: CarouselProp
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.4 }}
-              className="w-full flex flex-col md:flex-row items-center md:justify-between gap-6 md:gap-10 text-left"
+              className="w-full flex flex-col md:flex-row items-center md:justify-between gap-6 md:gap-10 text-left cursor-pointer group/slide"
+              onClick={() => onSelectCharacter(activeChar.id)}
             >
               
               {/* Left Column: Text Metadata & Actions */}
               <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left min-w-0">
-                {/* Badges - restricted strictly to status (BEST, NEW, HOT, UPDATE) */}
-                <div className="flex flex-wrap gap-1.5 justify-center md:justify-start mb-2 md:mb-3.5">
-                  {activeChar.badgeText?.map((b) => (
-                    <span
-                      key={b}
-                      className={`text-[9px] md:text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${
-                        b === "BEST"
-                          ? "bg-[#3a5cff] text-white"
-                          : b === "NEW"
-                          ? "bg-[#5c9d1a] text-white"
-                          : "bg-[#ff3a54] text-white"
-                      }`}
-                    >
-                      {b}
-                    </span>
-                  ))}
-                </div>
+                {/* Original Work Title Tag */}
+                <span className="inline-block text-[11px] md:text-xs font-bold text-[#b9adff] bg-[#7c6cff]/8 border border-[#7c6cff]/15 px-2.5 py-1 rounded-md mb-2 select-none tracking-tight">
+                  {activeChar.title}
+                </span>
 
                 {/* H1 displays character name */}
-                <h1 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight line-clamp-1">
+                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight select-none group-hover/slide:text-[#b9adff] transition-colors duration-200">
                   {activeChar.name}
                 </h1>
-                <p className="text-neutral-300 text-sm md:text-base font-medium mt-1.5 px-1 max-w-[520px] line-clamp-1 opacity-95">
+
+                {/* Custom UQX hooking tagline line-clamp */}
+                <p className="text-neutral-400 text-sm mt-2.5 px-0.5 max-w-[500px] line-clamp-2 leading-relaxed tracking-tight select-none">
                   {activeChar.tagline}
                 </p>
-
-                {/* Concept hashtags mapping - strictly limited to top 3 */}
-                <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                  {getConceptTags(activeChar.id).slice(0, 3).map((tag) => (
-                    <span 
-                      key={tag} 
-                      className="text-xs md:text-sm font-semibold text-neutral-300 bg-neutral-800/60 border border-neutral-700/40 px-2.5 py-0.5 rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Accumulation stats */}
-                <div className="flex gap-4 mt-3 text-neutral-400 text-[10px] md:text-xs hidden sm:flex">
-                  <span className="flex items-center gap-1.5"><Eye className="w-3 md:w-3.5 h-3 md:h-3.5 text-neutral-500" /> 누적 조회 {activeChar.views?.toLocaleString()}</span>
-                  <span className="flex items-center gap-1.5"><MessageSquare className="w-3 md:w-3.5 h-3 md:h-3.5 text-neutral-500" /> 누적 대화 {activeChar.chats?.toLocaleString()}</span>
-                </div>
-
-                {/* Chat action button */}
-                <button
-                  onClick={() => onSelectCharacter(activeChar.id)}
-                  className="mt-4 md:mt-6 px-5 md:px-[25px] py-2 md:py-3 bg-white text-black font-extrabold text-xs md:text-sm rounded-full flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-black/50 hover:bg-neutral-100 cursor-pointer"
-                >
-                  <Play className="w-3 h-3 fill-black text-black" />
-                  <span>대화 시작하기</span>
-                </button>
               </div>
 
               {/* Right Column: Character Portrait Card (Responsive size, Desktop featured element) */}
@@ -179,12 +142,6 @@ export default function Carousel({ characters, onSelectCharacter }: CarouselProp
                     <span className="font-extrabold text-4xl text-neutral-300">{activeChar.name.slice(0, 1)}</span>
                   </div>
                 )}
-                {/* Visual gradient overlay banner inside character portrait card */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none" />
-                <div className="absolute bottom-3 left-3 right-3 leading-none">
-                  <span className="text-[10px] font-black text-[#26eeb7] uppercase tracking-widest block mb-1.5">{activeChar.name}</span>
-                  <span className="text-sm font-black text-white block truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{activeChar.title}</span>
-                </div>
               </div>
 
             </motion.div>
