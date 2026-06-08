@@ -1,0 +1,348 @@
+import React, { useState, useEffect } from "react";
+import Header from "./components/Header";
+import SideMenu from "./components/SideMenu";
+import Carousel from "./components/Carousel";
+import NoticeBanner from "./components/NoticeBanner";
+import WorldSelect from "./components/WorldSelect";
+import CurationSection from "./components/CurationSection";
+import ChatRoom from "./components/ChatRoom";
+import Ranking from "./components/Ranking";
+import Favorite from "./components/Favorite";
+import MyInfo from "./components/MyInfo";
+import CharacterDetail from "./components/CharacterDetail";
+import ChatList from "./components/ChatList";
+
+import { Character, UserState } from "./types";
+import { NOTICES, INITIAL_CHARACTERS } from "./data";
+import { loadUserState, saveUserState } from "./utils";
+import { Home, Trophy, MessageSquare, User, Instagram, Youtube, Heart, Coins } from "lucide-react";
+
+export default function App() {
+  // Sync state
+  const [userState, setUserState] = useState<UserState>(() => loadUserState());
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"home" | "chat" | "ranking" | "favorite" | "myinfo" | "detail">("home");
+  const [activeCharacterId, setActiveCharacterId] = useState<string | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Sync back to localStorage as state coordinates update
+  useEffect(() => {
+    saveUserState(userState);
+  }, [userState]);
+
+  const handleUpdateUserState = (updated: UserState) => {
+    setUserState(updated);
+  };
+
+  const handleSelectCharacterToDetail = (charId: string) => {
+    setActiveCharacterId(charId);
+    setActiveView("detail");
+  };
+
+  const handleSelectCharacterToChat = (charId: string) => {
+    setActiveCharacterId(charId);
+    setActiveView("chat");
+  };
+
+  const handleSelectGenreInCuration = (genreName: string) => {
+    setSelectedGenre(genreName);
+    setSearchQuery("");
+    setIsSearchOpen(false);
+  };
+
+  const handleToggleSearch = () => {
+    const nextState = !isSearchOpen;
+    setIsSearchOpen(nextState);
+    if (!nextState) {
+      setSearchQuery("");
+    }
+  };
+
+  return (
+    <div className={`min-h-screen bg-[#020202] text-[#e1e1e1] flex flex-col font-sans transition-all duration-300 pb-20 md:pb-0`}>
+      {/* 1. Nav header */}
+      <Header
+        userState={userState}
+        onOpenMenu={() => setIsMenuOpen(true)}
+        onNavigate={(view) => {
+          setActiveView(view);
+          setActiveCharacterId(null);
+        }}
+        activeView={activeView}
+        onUpdateUserState={handleUpdateUserState}
+      />
+
+      {/* 2. Slide Drawer Menu Panel */}
+      <SideMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        userState={userState}
+        onUpdateUserState={handleUpdateUserState}
+        onNavigate={(view) => {
+          setActiveView(view);
+          setActiveCharacterId(null);
+        }}
+      />
+
+      {/* 3. Main Dashboard Frame Viewports */}
+      <main className="flex-grow pt-[64px] md:pt-[90px] flex flex-col">
+        {activeView === "home" && (
+          <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-6 md:gap-8 flex-1">
+            {/* Featured banner Carousel */}
+            <Carousel
+              characters={INITIAL_CHARACTERS}
+              onSelectCharacter={handleSelectCharacterToDetail}
+            />
+
+            {/* Rotating top notice slider bar */}
+            <NoticeBanner notices={NOTICES} />
+
+            {/* Sub-genre selection tabs mapping Novelpia categories */}
+            <WorldSelect
+              onSelectGenre={handleSelectGenreInCuration}
+              activeGenre={selectedGenre}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              isSearchOpen={isSearchOpen}
+              onToggleSearch={handleToggleSearch}
+            />
+
+            {/* Conditional curation groups based on active genre selections or search query */}
+            {isSearchOpen && searchQuery.trim() !== "" ? (
+              <CurationSection
+                title={`🔍 '${searchQuery}' 검색 결과`}
+                characters={INITIAL_CHARACTERS}
+                category="search"
+                searchQuery={searchQuery}
+                userState={userState}
+                onUpdateUserState={handleUpdateUserState}
+                onSelectCharacter={handleSelectCharacterToDetail}
+              />
+            ) : selectedGenre !== "ALL" ? (
+              <CurationSection
+                title={`[ ${selectedGenre} ] 장르 필터링 검색 결과`}
+                characters={INITIAL_CHARACTERS}
+                category="genre"
+                filterGenre={selectedGenre}
+                userState={userState}
+                onUpdateUserState={handleUpdateUserState}
+                onSelectCharacter={handleSelectCharacterToDetail}
+              />
+            ) : (
+              <>
+                {/* 1. New update world curation grid block */}
+                <CurationSection
+                  title="🔥 NEW 신규 차원 캐릭터 업데이트"
+                  characters={INITIAL_CHARACTERS}
+                  category="new"
+                  userState={userState}
+                  onUpdateUserState={handleUpdateUserState}
+                  onSelectCharacter={handleSelectCharacterToDetail}
+                />
+
+                {/* 2. Best rating world curation block */}
+                <CurationSection
+                  title="👑 지금 가장 핫한 인기 캐릭터 부스"
+                  characters={INITIAL_CHARACTERS}
+                  category="best"
+                  userState={userState}
+                  onUpdateUserState={handleUpdateUserState}
+                  onSelectCharacter={handleSelectCharacterToDetail}
+                />
+
+                {/* 3. General list curation block */}
+                <CurationSection
+                  title="🏫 대학교 러블리 여사친 동거 섹션"
+                  characters={INITIAL_CHARACTERS}
+                  category="genre"
+                  filterGenre="CAMPUS"
+                  userState={userState}
+                  onUpdateUserState={handleUpdateUserState}
+                  onSelectCharacter={handleSelectCharacterToDetail}
+                />
+
+                {/* 4. Alternate block */}
+                <CurationSection
+                  title="⚡ 최면과 일진들의 흔들거리는 지배 관계"
+                  characters={INITIAL_CHARACTERS}
+                  category="genre"
+                  filterGenre="HYPNOSIS"
+                  userState={userState}
+                  onUpdateUserState={handleUpdateUserState}
+                  onSelectCharacter={handleSelectCharacterToDetail}
+                />
+              </>
+            )}
+          </div>
+        )}
+
+        {activeView === "detail" && activeCharacterId && (
+          <CharacterDetail
+            charId={activeCharacterId}
+            characters={INITIAL_CHARACTERS}
+            userState={userState}
+            onUpdateUserState={handleUpdateUserState}
+            onStartChat={handleSelectCharacterToChat}
+            onBack={() => {
+              setActiveView("home");
+              setActiveCharacterId(null);
+            }}
+          />
+        )}
+
+        {activeView === "chat" && (
+          activeCharacterId ? (
+            <ChatRoom
+              characters={INITIAL_CHARACTERS}
+              userState={userState}
+              onUpdateUserState={handleUpdateUserState}
+              activeCharacterId={activeCharacterId}
+              onSelectCharacter={handleSelectCharacterToChat}
+              onBackToHome={() => {
+                setActiveCharacterId(null);
+              }}
+            />
+          ) : (
+            <ChatList
+              characters={INITIAL_CHARACTERS}
+              userState={userState}
+              onUpdateUserState={handleUpdateUserState}
+              onSelectCharacter={handleSelectCharacterToChat}
+              onNavigateHome={() => setActiveView("home")}
+            />
+          )
+        )}
+
+        {activeView === "ranking" && (
+          <Ranking
+            characters={INITIAL_CHARACTERS}
+            userState={userState}
+            onSelectCharacter={handleSelectCharacterToDetail}
+          />
+        )}
+
+        {activeView === "favorite" && (
+          <Favorite
+            characters={INITIAL_CHARACTERS}
+            userState={userState}
+            onUpdateUserState={handleUpdateUserState}
+            onSelectCharacter={handleSelectCharacterToDetail}
+            onNavigateHome={() => setActiveView("home")}
+          />
+        )}
+
+        {activeView === "myinfo" && (
+          <MyInfo
+            userState={userState}
+            onUpdateUserState={handleUpdateUserState}
+          />
+        )}
+      </main>
+
+      {/* 4. Mobile Bottom Navigation Drawer (Visible on narrow viewports) */}
+      <div className="fixed bottom-0 left-0 right-0 h-[58px] bg-[#1a1a1c]/95 backdrop-blur-md border-t border-[#303030]/60 flex items-center md:hidden z-[100] select-none text-[10px] text-neutral-400">
+        <button
+          onClick={() => {
+            setActiveView("home");
+            setActiveCharacterId(null);
+          }}
+          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+            activeView === "home" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+          }`}
+        >
+          <Home className="w-5 h-5" />
+          <span>홈</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveView("ranking");
+            setActiveCharacterId(null);
+          }}
+          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+            activeView === "ranking" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+          }`}
+        >
+          <Trophy className="w-5 h-5" />
+          <span>랭킹</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveView("chat");
+            setActiveCharacterId(null);
+          }}
+          className={`relative flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+            activeView === "chat" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+          }`}
+        >
+          <MessageSquare className="w-5 h-5" />
+          <span>채팅</span>
+          {userState.tickets > 0 && (
+            <span className="absolute top-0 right-7 bg-[#7632ff] w-2 h-2 rounded-full animate-pulse"></span>
+          )}
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveView("myinfo");
+            setActiveCharacterId(null);
+          }}
+          className={`flex-1 flex flex-col items-center gap-1 cursor-pointer transition-colors ${
+            activeView === "myinfo" ? "text-[#7632ff] font-bold" : "hover:text-neutral-200"
+          }`}
+        >
+          <User className="w-5 h-5" />
+          <span>내정보</span>
+        </button>
+      </div>
+
+      {/* 5. Company info corporate Footer (Shown only if view is not chat fullscreen) */}
+      {activeView !== "chat" && (
+        <footer className="bg-[#111112] border-t border-[#222]/80 mt-auto py-8 px-4 md:px-8 select-none text-[11px] md:text-xs text-neutral-500 font-sans">
+          <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row justify-between gap-8 py-3">
+            
+            {/* MetaCraft company details */}
+            <div className="space-y-3 max-w-[650px]">
+              {/* Utility Terms shortcuts */}
+              <div className="flex flex-wrap gap-4 text-xs font-semibold text-neutral-400">
+                <a href="https://novelpia.com/page/terms_of_use" target="_blank" className="hover:text-white transition-colors">이용약관</a>
+                <a href="https://novelpia.com/page/privacy_policy" target="_blank" className="hover:text-white font-bold transition-colors">개인정보 처리방침</a>
+                <a href="https://novelpia.com/page/youth_policy" target="_blank" className="hover:text-white transition-colors">청소년 보호정책</a>
+                <a href="http://we.novelpia.com" target="_blank" className="hover:text-white transition-colors">회사소개</a>
+                <a href="https://novelpia.com/page/partner" target="_blank" className="hover:text-white transition-colors">제휴안내</a>
+              </div>
+
+              <div className="space-y-1 font-medium leading-relaxed">
+                <p>주식회사 메타크래프트 • 대표이사 유정석 • 사업자등록번호 210-81-79781</p>
+                <p>통신판매업 제2022-서울구로-2494호 • 주소 서울특별시 구로구 디지털로31길 12, (구로동, TP타워) 9층</p>
+                <p>고객센터: 1588-3644 • 이메일: <a href="mailto:help@novelpia.com" className="underline hover:text-neutral-300">help@novelpia.com</a> (운영시간 평일 AM 10:00 ~ PM 07:00 • 휴게시간 PM 12:50 ~ 02:10)</p>
+              </div>
+
+              <p className="text-[10px] text-neutral-600">
+                주의! 본 사이트에 등록된 컨텐츠는 NovelChat 클론 데모이며 가상 인공지능 프롬프트 테스트 목적으로 제공됩니다. 복제 및 무단 도용은 법적 규제를 유발할 수 있습니다.
+              </p>
+            </div>
+
+            {/* Social channels display list */}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="p-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-full cursor-pointer text-neutral-400 hover:text-white transition-all">
+                <Instagram className="w-4 h-4" />
+              </span>
+              <span className="p-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-full cursor-pointer text-neutral-400 hover:text-white transition-all">
+                <Youtube className="w-4 h-4" />
+              </span>
+              <div className="text-right">
+                <p className="font-bold text-[#eee] text-xs">Copyright © 메타크래프트 2026.</p>
+                <p className="text-[10px] text-neutral-600 mt-0.5">Novelpia Novelchat platform duplication model.</p>
+              </div>
+            </div>
+
+          </div>
+        </footer>
+      )}
+    </div>
+  );
+}
