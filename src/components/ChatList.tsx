@@ -37,9 +37,10 @@ export default function ChatList({
   // Find characters with valid saved chat history in localStorage
   const loadSessions = () => {
     const sessions: ActiveChatSession[] = [];
+    const activePersona = userState.activePersona || "독자님";
     
     characters.forEach((char) => {
-      const history = loadChatHistory(char.id);
+      const history = loadChatHistory(char.id, activePersona);
       if (history && history.length > 0) {
         const lastMsg = history[history.length - 1];
         sessions.push({
@@ -55,13 +56,14 @@ export default function ChatList({
 
   useEffect(() => {
     loadSessions();
-  }, [characters]);
+  }, [characters, userState.activePersona]);
 
   // Handle clearing/quitting a chat room
   const handleRemoveSession = (e: React.MouseEvent, charId: string, charName: string) => {
     e.stopPropagation(); // Avoid triggering chat room entry
+    const activePersona = userState.activePersona || "독자님";
     if (confirm(`[${charName}] 캐릭터와의 모든 대화기록과 소중한 기억을 지우고 방을 나가실 건가요?`)) {
-      clearChatHistory(charId);
+      clearChatHistory(charId, activePersona);
       triggerToast(`🍀 ${charName} 방의 대화가 완전 초기화되었습니다.`);
       loadSessions();
     }
@@ -81,13 +83,65 @@ export default function ChatList({
     .slice(0, 3);
 
   return (
-    <div className="w-full max-w-[840px] mx-auto px-4 py-6 md:py-10 flex flex-col gap-6 md:gap-8 select-none">
+    <div className="w-full max-w-[840px] mx-auto px-4 py-6 md:py-10 flex flex-col gap-3 select-none">
       
       {/* Title & Description Header Text Only */}
       <div className="relative flex flex-col justify-center gap-2 py-2 px-1 mb-2 pb-3 border-b border-neutral-900/40">
         <div className="relative z-10">
           <h2 className="text-[#eee] font-black text-xl md:text-3xl tracking-tight leading-none mb-2">지금 하고 있는 채팅</h2>
-          <p className="text-sm text-neutral-400 tracking-tight leading-relaxed max-w-none">최근 나눈 대화 기록을 모아보고 대화를 이어가거나 초기화할 수 있는 나만의 대화함</p>
+        </div>
+      </div>
+
+      {/* 1.5. Persona Select / Switch Bar on ChatList */}
+      <div className="flex flex-col gap-2.5 p-3.5 bg-[#141416]/80 border border-neutral-900 rounded-xl mb-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black text-neutral-500 uppercase tracking-wider">대화용 페르소나 프로필 선택</span>
+          <button 
+            onClick={() => {
+              const newName = prompt("새로운 페르소나 프로필 이름을 입력하세요:");
+              if (newName && newName.trim()) {
+                const trimmed = newName.trim();
+                const currentPersonas = userState.personas || ["독자님"];
+                if (currentPersonas.includes(trimmed)) {
+                  alert("이미 존재하는 페르소나 이름입니다.");
+                  return;
+                }
+                const updatedPersonas = [...currentPersonas, trimmed];
+                onUpdateUserState({
+                  ...userState,
+                  personas: updatedPersonas,
+                  activePersona: trimmed
+                });
+                triggerToast(`✨ 새 페르소나 [${trimmed}](으)로 활성화되었습니다.`);
+              }
+            }}
+            className="text-[11px] text-[#7c6cff] font-extrabold flex items-center gap-1 hover:underline cursor-pointer bg-transparent border-0"
+          >
+            + 새 페르소나 추가
+          </button>
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
+          {(userState.personas || ["독자님"]).map((p) => {
+            const isActive = (userState.activePersona || "독자님") === p;
+            return (
+              <button
+                key={p}
+                onClick={() => {
+                  onUpdateUserState({
+                    ...userState,
+                    activePersona: p
+                  });
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap border ${
+                  isActive 
+                    ? "bg-[#7c6cff] text-white border-[#7c6cff] shadow-lg shadow-[#7c6cff]/20" 
+                    : "bg-[#0b0a0c] text-neutral-400 hover:text-white border-neutral-900"
+                }`}
+              >
+                {p}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -143,86 +197,73 @@ export default function ChatList({
                 <div
                   key={char.id}
                   onClick={() => onSelectCharacter(char.id)}
-                  className="group relative w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#141416] hover:bg-[#1a1a1d] border border-neutral-900/80 hover:border-[#7c6cff]/30 transition-all cursor-pointer duration-200"
+                  className="group relative w-full flex items-start gap-3.5 p-4 rounded-xl bg-[#141416] hover:bg-[#1a1a1d] border border-neutral-900/80 hover:border-[#7c6cff]/30 transition-all cursor-pointer duration-200"
                 >
                   {/* Hover Left Tag Accent strip */}
                   <div className="absolute inset-y-0 left-0 w-[3px] bg-[#7c6cff] rounded-l-xl scale-y-0 group-hover:scale-y-100 transition-transform duration-200" />
 
-                  {/* Left elements: Profile Avatar + Title & Last text */}
-                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                    
+                  {/* Left elements: Profile Avatar */}
+                  <div className="relative shrink-0 select-none mt-0.5">
                     {/* Circle Avatar Wrapper with smooth border frame (no stark glows) */}
-                    <div className="relative shrink-0 select-none">
-                      <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr ${getAvatarColor(char.id)} p-[1.5px] transition-transform duration-300 group-hover:scale-105`}>
-                        <div className="w-full h-full bg-[#111113] rounded-full overflow-hidden">
-                          {char.avatar ? (
-                            <img
-                              src={char.avatar}
-                              alt={char.name}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center font-black text-xs text-neutral-400 font-mono">
-                              {char.name.slice(0, 1)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Active green breathing glowing dot indicating live persona */}
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#141416] rounded-full animate-pulse shadow-md" />
-                    </div>
-
-                    {/* Metadata column details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-base text-neutral-200 group-hover:text-[#b9adff] transition-colors tracking-tight">
-                          {char.name}
-                        </span>
-                        
-                        <span className="text-xs text-neutral-500 font-medium truncate max-w-[150px] md:max-w-[240px]">
-                          {char.title}
-                        </span>
-
-                        {char.isAdult && (
-                          <span className="bg-[#ff3a54] text-white text-[9px] font-black px-1 py-0.2 rounded-sm shadow-sm scale-90">
-                            19
-                          </span>
+                    <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr ${getAvatarColor(char.id)} p-[1.5px] transition-transform duration-300 group-hover:scale-105`}>
+                      <div className="w-full h-full bg-[#111113] rounded-full overflow-hidden">
+                        {char.avatar ? (
+                          <img
+                            src={char.avatar}
+                            alt={char.name}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center font-black text-xs text-neutral-400 font-mono">
+                            {char.name.slice(0, 1)}
+                          </div>
                         )}
-                        
-                        <span className="text-[10px] bg-neutral-900 text-neutral-500 px-1.5 py-0.2 rounded font-medium">
-                          {getGenreKorean(char.genre)}
-                        </span>
                       </div>
-
-                      {/* Last Message Text Preview (Very soft grey, no heavy contrast) */}
-                      <p className="text-sm text-neutral-400 mt-1 font-normal truncate max-w-[260px] sm:max-w-[420px] md:max-w-[480px] leading-relaxed group-hover:text-neutral-300">
-                        {isUser ? (
-                          <span className="text-[#a394ff] font-bold mr-1 bg-[#7c6cff]/10 px-1.2 py-0.1 rounded text-[9.5px]">
-                            나
-                          </span>
-                        ) : null}
-                        <span className="align-middle">{lastMsg.text}</span>
-                      </p>
                     </div>
+                    
+                    {/* Active green breathing glowing dot indicating live persona */}
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#141416] rounded-full animate-pulse shadow-md" />
                   </div>
 
-                  {/* Right side alignment: Time, msg count and Clear actions */}
-                  <div className="flex items-center sm:items-end justify-between sm:justify-start sm:flex-col gap-2 shrink-0 border-t border-neutral-900/50 pt-2 sm:pt-0 sm:border-0 pl-1">
-                    
-                    <span className="text-[9.5px] text-neutral-500 font-mono">
-                      {lastMsg.timestamp || "최근 대화"}
-                    </span>
-                    
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-[9.5px] font-bold bg-[#7c6cff]/10 text-[#a394ff] px-2 py-0.5 rounded-full">
+                  {/* Right contents: Name/Title, dialogue text preview, and actions row */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    {/* Row 1: Name and source movie/novel title inline */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-extrabold text-base text-neutral-200 group-hover:text-[#b9adff] transition-colors tracking-tight">
+                        {char.name}
+                      </span>
+                      
+                      <span className="text-xs text-neutral-500 font-medium truncate max-w-[150px] sm:max-w-[200px] md:max-w-[240px]">
+                        {char.title}
+                      </span>
+
+                      {char.isAdult && (
+                        <span className="bg-[#ff3a54] text-white text-[9px] font-black px-1 py-0.2 rounded-sm shadow-sm scale-90">
+                          19
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Row 2: Dialogue text (Taking full line width) */}
+                    <p className="text-sm text-neutral-400 font-normal truncate max-w-full leading-relaxed group-hover:text-neutral-300">
+                      {isUser ? (
+                        <span className="text-[#a394ff] font-bold mr-1 bg-[#7c6cff]/10 px-1.2 py-0.1 rounded text-[9.5px]">
+                          나
+                        </span>
+                      ) : null}
+                      <span className="align-middle">{lastMsg.text}</span>
+                    </p>
+
+                    {/* Row 3: Turn count & Delete action (Aligned to the right) */}
+                    <div className="flex items-center justify-end gap-2 mt-1">
+                      <span className="text-[9.5px] font-bold bg-[#7c6cff]/10 text-[#a394ff] px-2 py-0.5 rounded-full select-none">
                         {session.totalMessages}턴 대화
                       </span>
                       
                       <button
                         onClick={(e) => handleRemoveSession(e, char.id, char.name)}
-                        className="p-1 px-1.5 rounded bg-neutral-900/80 text-neutral-500 hover:text-rose-400 transition-all cursor-pointer"
+                        className="p-1 px-1.5 rounded bg-neutral-900/80 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer border border-neutral-900/40"
                         title="대화 초기화"
                       >
                         <Trash2 className="w-3 h-3" />

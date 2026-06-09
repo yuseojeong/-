@@ -11,6 +11,7 @@ interface CurationSectionProps {
   userState: UserState;
   onUpdateUserState: (state: UserState) => void;
   onSelectCharacter: (charId: string) => void;
+  onSelectNovel: (character: Character) => void;
   filterGenre?: string;
   searchQuery?: string;
 }
@@ -22,6 +23,7 @@ export default function CurationSection({
   userState,
   onUpdateUserState,
   onSelectCharacter,
+  onSelectNovel,
   filterGenre,
   searchQuery
 }: CurationSectionProps) {
@@ -59,7 +61,7 @@ export default function CurationSection({
   if (filtered.length === 0) {
     if (category === "search") {
       return (
-        <section className="mb-8 md:mb-12 select-none animate-fade-in">
+        <section className="mb-12 md:mb-18 select-none animate-fade-in">
           <div className="flex items-center justify-between mb-3.5 md:mb-6 px-1.5">
             <h2 className="text-[#eee] font-black text-[15px] md:text-2xl tracking-tight bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-transparent">
               {title}
@@ -88,7 +90,7 @@ export default function CurationSection({
   };
 
   return (
-    <section className="mb-8 md:mb-12 select-none">
+    <section className="mb-12 md:mb-18 select-none">
       
       {/* Section Header */}
       <div className="flex items-center justify-between mb-3.5 md:mb-6 px-1.5">
@@ -133,41 +135,6 @@ export default function CurationSection({
                 {isFav ? <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" /> : <StarOff className="w-3.5 h-3.5 text-white/70" />}
               </button>
 
-              {/* Combined Row of Badges (19, New, Update, Best, Hot) */}
-              <div className="absolute top-2.5 left-2.5 flex items-center gap-1 z-20 flex-wrap">
-                {c.isAdult && (
-                  <span className="bg-[#ff3a54]/10 text-[#ff4c6a] border border-[#ff3a54]/25 text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm" title="성인 소설 원작 캐릭터">
-                    19
-                  </span>
-                )}
-
-                {c.badgeText && c.badgeText.length > 0 && (
-                  <>
-                    {c.badgeText.map((tag) => {
-                      const upperTag = tag.toUpperCase();
-                      let styleClass = "bg-neutral-800/60 text-neutral-300 border border-neutral-700/50";
-                      if (upperTag === "NEW") {
-                        styleClass = "bg-[#10b981]/10 text-[#34d399] border border-[#10b981]/25";
-                      } else if (upperTag === "UPDATE") {
-                        styleClass = "bg-[#f59e0b]/10 text-[#fbbf24] border border-[#f59e0b]/25";
-                      } else if (upperTag === "BEST") {
-                        styleClass = "bg-[#3b82f6]/10 text-[#60a5fa] border border-[#3b82f6]/25";
-                      } else if (upperTag === "HOT") {
-                        styleClass = "bg-[#ec4899]/10 text-[#f472b6] border border-[#ec4899]/25";
-                      }
-                      return (
-                        <span
-                          key={tag}
-                          className={`text-[8.5px] font-extrabold px-1.5 py-0.5 rounded shadow-sm ${styleClass}`}
-                        >
-                          {tag}
-                        </span>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-
                {/* Overlaid Content Metadata Container */}
               <div className="relative z-20 p-3.5 md:p-4 flex flex-col justify-end w-full">
                 <div>
@@ -181,15 +148,15 @@ export default function CurationSection({
                 </div>
 
                 {/* Concept Chip (Moved from first div) */}
-                <div className="mt-1.5 flex flex-row flex-nowrap gap-1 justify-start overflow-x-auto scrollbar-none whitespace-nowrap">
+                <div className="mt-1.5 flex flex-row flex-nowrap gap-[6px] justify-start items-center overflow-hidden whitespace-nowrap text-ellipsis">
                   {c.tags && c.tags.length > 0 ? (
                     c.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
+                      <span key={tag} className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 hover:text-[#c7bdff] transition-colors inline-block shrink-0">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-[9px] md:text-[11px] font-extrabold tracking-tight text-[#b9adff] bg-[#7c6cff]/12 border border-[#7c6cff]/20 px-1.5 md:px-2 py-0.5 rounded-full inline-block shrink-0">
+                    <span className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 inline-block shrink-0">
                       #{getGenreKorean(c.genre)}
                     </span>
                   )}

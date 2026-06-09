@@ -23,6 +23,16 @@ export interface Character {
   description: string;
   systemPrompt: string; // Used by Gemini proxy to set character personality
   tags?: string[];      // Creative tags like #일진, #츤데레, #혐관
+  novelStats?: {
+    author: string;
+    views: string;          // e.g., "35.2M"
+    recommendations: string;// e.g., "1.2M"
+    favorites: string;      // e.g., "180,000"
+    chapters: string;       // e.g., "340화 연재중"
+    synopsis: string;       // Original synopis
+    worldview?: string;     // Worldview summary
+    novelpiaUrl: string;    // Novelpia link
+  };
 }
 
 export interface UserState {
@@ -32,6 +42,8 @@ export interface UserState {
   favorites: string[]; // Character IDs
   unlockedAdult: boolean; // Settings switch for general vs. adult mode
   theme: "dark" | "light";
+  personas?: string[];     // Multi-persona names list
+  activePersona?: string;  // Active/selected persona name
 }
 
 export interface Notice {

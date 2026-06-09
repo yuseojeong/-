@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, Star, Heart, Image, MessageSquare, Play, BookOpen, X, ChevronRight, Lock } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { ArrowLeft, Star, Heart, Image, MessageSquare, Play, BookOpen, X, ChevronRight, Lock, PlusCircle, Sparkles, Trash2 } from "lucide-react";
 import { Character, UserState } from "../types";
-import { getGenreKorean } from "../utils";
+import { getGenreKorean, loadChatHistory, clearChatHistory, getAvatarColor } from "../utils";
 
 // Structuring rich metadata mappings for each character
 interface RichMetadata {
@@ -410,6 +410,7 @@ interface CharacterDetailProps {
   onUpdateUserState: (state: UserState) => void;
   onStartChat: (charId: string) => void;
   onBack: () => void;
+  onSelectNovel: (character: Character) => void;
 }
 
 interface CommentItem {
@@ -427,7 +428,8 @@ export default function CharacterDetail({
   userState,
   onUpdateUserState,
   onStartChat,
-  onBack
+  onBack,
+  onSelectNovel
 }: CharacterDetailProps) {
   const character = characters.find((c) => c.id === charId);
   const metadata = RICH_CHARACTERS_DATA[charId] || {
@@ -477,6 +479,58 @@ export default function CharacterDetail({
   const isFavorite = userState.favorites.includes(character.id);
   const [localLikes, setLocalLikes] = useState(() => Number(character.likes) || 120);
   const [hasLiked, setHasLiked] = useState(false);
+
+  // Persona dynamic selectors
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<string>(userState.activePersona || "독자님");
+  const [newPersonaName, setNewPersonaName] = useState("");
+
+  // Sync selectedPersona when userState.activePersona updates
+  useEffect(() => {
+    if (userState.activePersona) {
+      setSelectedPersona(userState.activePersona);
+    }
+  }, [userState.activePersona]);
+
+  const handleAddNewPersona = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const name = newPersonaName.trim();
+    if (!name) return;
+
+    const currentPersonas = userState.personas || ["독자님"];
+    if (currentPersonas.includes(name)) {
+      alert("이미 같은 이름의 페르소나 프로필이 존재합니다.");
+      return;
+    }
+
+    const updated = [...currentPersonas, name];
+    onUpdateUserState({
+      ...userState,
+      personas: updated,
+      activePersona: name
+    });
+    setSelectedPersona(name);
+    setNewPersonaName("");
+  };
+
+  const handleResetHistoryInModal = (persona: string) => {
+    if (confirm(`[${persona}] 페르소나와 [${character.name}] 간의 모든 대화 기록을 지우고 대화를 새로 시작하실 건가요?`)) {
+      clearChatHistory(character.id, persona);
+      triggerToast(`🍀 [${persona}] 페르소나와의 대화 내역이 완전히 리셋되었습니다.`);
+    }
+  };
+
+  const handleConfirmStartChat = () => {
+    // 1. Update active persona in general userState
+    onUpdateUserState({
+      ...userState,
+      activePersona: selectedPersona
+    });
+    // 2. Shut modal
+    setIsPersonaModalOpen(false);
+    // 3. Initiate actual chat room
+    onStartChat(character.id);
+  };
   
   // Interactive comments state
   const [commentInput, setCommentInput] = useState("");
@@ -508,6 +562,41 @@ export default function CharacterDetail({
   ]);
   const [sortType, setSortType] = useState<"new" | "likes">("new");
   const [activeTab, setActiveTab] = useState<"dossier" | "prologue" | "comments">("dossier");
+
+  // Scroll Position tracker and refs for mobile sticky transitions
+  const [scrollY, setScrollY] = useState(0);
+  const profileTitleRef = useRef<HTMLHeadingElement>(null);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const [isHeaderPinned, setIsHeaderPinned] = useState(false);
+  const [isTabsPinned, setIsTabsPinned] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+      if (profileTitleRef.current) {
+        const titleTop = profileTitleRef.current.getBoundingClientRect().top;
+        // The mobile header sticks at the top, height is 56px.
+        // If the real title top is ≤ 56px, it is scrolled past.
+        setIsHeaderPinned(titleTop <= 56);
+      } else {
+        setIsHeaderPinned(window.scrollY > 280);
+      }
+      if (tabContainerRef.current) {
+        const tabTop = tabContainerRef.current.getBoundingClientRect().top;
+        // The tab container is sticky at top-[56px] (56px).
+        // Once its top ≤ 57px, it is locked at the sticky top position.
+        setIsTabsPinned(tabTop <= 57);
+      } else {
+        setIsTabsPinned(window.scrollY > 600);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Run once initially to set initial state
+    handleScroll();
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   // Author modal state
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
@@ -593,16 +682,68 @@ export default function CharacterDetail({
   };
 
   return (
-    <div className="w-full max-w-[1240px] mx-auto px-0 lg:px-[20px] py-0 lg:py-8 flex flex-col gap-0 lg:gap-10 pb-20 lg:pb-8 relative">
+    <div className="w-full max-w-[1240px] mx-auto px-0 lg:px-[20px] py-0 lg:py-8 flex flex-col gap-0 lg:gap-10 pb-10 lg:pb-8 relative">
       
-      {/* Detail view banner navigation */}
-      <div className="flex items-center justify-between pb-3 border-b border-neutral-900 lg:border-b lg:pb-3 lg:mb-0 lg:relative lg:top-auto lg:left-auto fixed top-4 left-4 z-50">
+      {/* Fixed Blurred Background Image for Mobile */}
+      <div className="fixed inset-0 lg:hidden z-0 pointer-events-none overflow-hidden">
+        {character.avatar ? (
+          <img
+            src={character.avatar}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover filter blur-[40px] brightness-[0.22] scale-110 saturate-[120%]"
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-tr ${getAvatarColor(character.id)} opacity-40`} />
+        )}
+      </div>
+
+      {/* Mobile Unified Solid background sheet, starting at 35vh and covering all the way to bottom */}
+      <div className="absolute top-[35vh] inset-x-0 bottom-0 bg-gradient-to-b from-black/20 via-black/85 to-[#0a0a0c] border-none rounded-t-[32px] shadow-[0_-12px_45px_rgba(0,0,0,0.95)] backdrop-blur-2xl z-10 lg:hidden block pointer-events-none" />
+      
+      {/* MOBILE STICKY/FLOATING HEADER */}
+      <div 
+        className={`lg:hidden fixed top-0 inset-x-0 z-50 transition-all duration-300 flex items-center px-4 ${
+          isHeaderPinned 
+            ? "bg-black border-b border-neutral-900/60 shadow-md h-14" 
+            : "bg-transparent h-16 pointer-events-none"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full pointer-events-auto">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={onBack}
+              className={`flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
+                isHeaderPinned
+                  ? "w-8 h-8 text-neutral-300 hover:text-white"
+                  : "w-10 h-10 text-white"
+              }`}
+              aria-label="목록으로 돌아가기"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div 
+              className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 transform ${
+                isHeaderPinned 
+                  ? "opacity-100 translate-x-0 font-bold" 
+                  : "opacity-0 -translate-x-3 pointer-events-none"
+              }`}
+            >
+              <span className="text-white font-extrabold text-base truncate">{character.name}</span>
+              <span className="text-neutral-500 text-xs truncate">| {character.title}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop view banner navigation */}
+      <div className="hidden lg:flex items-center justify-between pb-3 border-b border-neutral-900 relative top-auto left-auto">
         <button
           onClick={onBack}
-          className="flex items-center justify-center gap-2 text-sm text-[#eee] hover:text-white cursor-pointer transition-all duration-150 py-1.5 px-3 rounded-full bg-[#111112]/60 backdrop-blur-md lg:bg-[#111112] border border-neutral-800 lg:border-neutral-900 hover:border-[#7c6cff]/30 w-10 h-10 lg:w-auto lg:h-auto select-none"
+          className="flex items-center justify-center gap-2 text-sm text-[#eee] hover:text-white cursor-pointer transition-all duration-150 py-1.5 px-3 rounded-full bg-[#111112] border border-neutral-800 lg:border-neutral-900 hover:border-[#7c6cff]/30 w-auto h-auto select-none"
         >
-          <ArrowLeft className="w-4 h-4 text-white lg:text-neutral-400" />
-          <span className="hidden lg:inline">목록으로 돌아가기</span>
+          <ArrowLeft className="w-4 h-4 text-neutral-400" />
+          <span>목록으로 돌아가기</span>
         </button>
       </div>
 
@@ -610,8 +751,8 @@ export default function CharacterDetail({
       <section className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 md:gap-10 relative">
         
         {/* Left Column: Rich Portrait Banner Artwork Card */}
-        <div className="flex flex-col gap-4 lg:relative fixed top-0 inset-x-0 h-[48vh] lg:h-auto z-0 lg:z-10 w-full lg:w-auto select-none pointer-events-none lg:pointer-events-auto">
-          <div className="w-full h-full lg:h-[440px] rounded-none lg:rounded-3xl overflow-hidden relative border-none lg:border lg:border-neutral-900 shadow-none lg:shadow-2xl bg-[#0a0a0c]">
+        <div className="flex flex-col gap-4 lg:relative fixed top-0 inset-x-0 h-[40vh] lg:h-auto z-0 lg:z-10 w-full lg:w-auto select-none pointer-events-none lg:pointer-events-auto">
+          <div className="w-full h-full lg:h-[380px] rounded-none lg:rounded-3xl overflow-hidden relative border-none lg:border lg:border-neutral-900 shadow-none lg:shadow-2xl bg-[#0a0a0c]">
             {character.avatar ? (
               <img
                 src={character.avatar}
@@ -630,115 +771,107 @@ export default function CharacterDetail({
         </div>
 
         {/* Right Column: Character profile details sheets */}
-        <div className="flex flex-col relative z-20 w-full bg-[#0a0a0c]/80 backdrop-blur-2xl border-t border-neutral-800/40 rounded-t-[32px] px-4 pt-5 pb-8 shadow-[0_-12px_45px_rgba(0,0,0,0.95)] lg:bg-transparent lg:backdrop-blur-none lg:border-t-0 lg:rounded-none lg:p-0 lg:shadow-none lg:z-10">
+        <div className="flex flex-col relative z-20 w-full bg-transparent lg:bg-[#111112]/30 backdrop-blur-none lg:backdrop-blur-md border-0 rounded-none lg:rounded-3xl px-6 lg:p-8 pt-6 pb-2 lg:pb-8 shadow-none lg:shadow-xl lg:z-10 lg:min-h-[380px] lg:justify-between mt-[35vh] lg:mt-0">
           
-          {/* Mobile height spacer so fixed background underlay is beautifully visible initially */}
-          <div className="h-[38vh] w-full pointer-events-none lg:hidden block" />
-
           {/* Sheet indicator drag handle bar for mobile */}
           <div className="w-10 h-1 bg-neutral-800/80 rounded-full mx-auto -mt-1 mb-5 select-none lg:hidden block" />
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className="text-xs font-medium text-neutral-500 tracking-wide">
-                {character.title}
-              </span>
-              <div className="flex items-center gap-3.5 mt-1.5">
-                <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-none">
-                  {character.name}
-                </h1>
-                
-                {/* Favorite toggle bookmark button */}
-                <button
-                  onClick={handleToggleFavorite}
-                  className={`p-1.5 rounded-full border transition-all cursor-pointer ${
-                    isFavorite 
-                      ? "bg-amber-500/10 border-amber-500/20 text-amber-400 scale-110" 
-                      : "bg-[#111112] border-neutral-900 text-neutral-500 hover:text-white"
-                  }`}
-                  title="관심 등록하기"
-                >
-                  <Star className="w-5 h-5 fill-current" />
-                </button>
+          
+          <div className="flex flex-col gap-2 md:gap-6 w-full">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  <h1 ref={profileTitleRef} className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-none">
+                    {character.name}
+                  </h1>
+                  
+                  {/* Web Novel link (Shown next to name on mobile where favorite button was, but hidden on desktop) */}
+                  <span className="w-[1px] h-3.5 bg-neutral-800 self-center block lg:hidden shrink-0 mx-0.5" />
+
+                  <button
+                    onClick={() => onSelectNovel(character)}
+                    className="flex lg:hidden items-center gap-1 text-xs text-neutral-400 font-semibold select-none shrink-0 cursor-pointer active:scale-95 transition-all bg-transparent border-0 px-0 py-0"
+                    title="원작 소설 상세 메타데이터 상세 열기"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                    <span><b className="text-[#eee] font-bold">{character.title}</b></span>
+                  </button>
+                </div>
+                <p className="text-neutral-300 text-sm font-semibold mt-2 md:mt-4 leading-relaxed">
+                  {character.tagline}
+                </p>
               </div>
-              <p className="text-neutral-300 text-base font-semibold mt-3">
-                {character.tagline}
-              </p>
+            </div>
+
+            {/* Social cumulative metrics dashboard */}
+            <div className="flex flex-row flex-nowrap items-center gap-x-3 md:gap-x-3.5 mt-0.5 md:mt-1 text-neutral-400 overflow-x-auto scrollbar-none py-1 whitespace-nowrap w-full">
+              <span className="inline-flex items-center gap-1 md:gap-1.5 text-xs md:text-[16px] font-semibold bg-transparent md:bg-[#111112] border-0 md:border md:border-neutral-900 px-0 py-0 md:px-4 md:py-2 rounded-full shrink-0">
+                <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-500 shrink-0" />
+                <b className="text-[#eee]">{character.chats || "9.9K"}</b>
+              </span>
+
+              <span className="inline-flex items-center gap-1 md:gap-1.5 text-xs md:text-[16px] font-semibold bg-transparent md:bg-[#111112] border-0 md:border md:border-neutral-900 px-0 py-0 md:px-4 md:py-2 rounded-full shrink-0">
+                <Image className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-500 shrink-0" />
+                <b className="text-[#eee]">71</b>
+              </span>
+
+              <button
+                onClick={handleLikeCharacter}
+                className={`inline-flex items-center gap-1 md:gap-1.5 text-xs md:text-[16px] font-semibold px-0 py-0 md:px-4 md:py-2 rounded-full cursor-pointer transition-all border-0 md:border shrink-0 ${
+                  hasLiked 
+                    ? "bg-transparent md:bg-rose-500/10 md:border-rose-500/20 text-rose-400" 
+                    : "bg-transparent md:bg-[#111112] md:border-neutral-900 text-neutral-400 md:hover:bg-neutral-850"
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 md:w-4 md:h-4 shrink-0 ${hasLiked ? "fill-rose-500" : ""}`} />
+                <b className={hasLiked ? "text-rose-400" : "text-[#eee]"}>{localLikes.toLocaleString()}</b>
+              </button>
+
+              {/* Original work detail metrics link */}
+              <span className="hidden lg:block w-[1px] h-3.5 md:h-4.5 bg-neutral-800 self-center mx-1.5 md:mx-2 shrink-0" />
+
+              <button
+                onClick={() => onSelectNovel(character)}
+                className="hidden lg:inline-flex items-center gap-1 md:gap-1.5 text-xs md:text-[16px] text-neutral-400 font-semibold bg-transparent md:bg-[#111112] border-0 md:border md:border-neutral-900 px-0 py-0 md:px-4 md:py-2 rounded-full cursor-pointer md:hover:bg-neutral-850 md:hover:text-white transition-all select-none shrink-0"
+                title="원작 소설 상세 메타데이터 상세 열기"
+              >
+                <BookOpen className="w-3.5 h-3.5 md:w-4 md:h-4 text-neutral-500 shrink-0" />
+                <span><b className="text-[#eee] font-bold">{character.title}</b></span>
+              </button>
+            </div>
+
+            {/* Abstract tag labels row */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 mt-0.5 md:mt-2">
+              {metadata.tags.map((tag) => (
+                <span 
+                  key={tag} 
+                  className="text-xs md:text-[16px] font-bold text-[#b9adff]/95 hover:text-[#c7bdff] transition-colors"
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* Social cumulative metrics dashboard */}
-          <div className="flex flex-wrap items-center gap-2.5 mt-4">
-            <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400 font-semibold bg-[#111112] border border-neutral-900 px-3 py-1.5 rounded-full">
-              <MessageSquare className="w-3.5 h-3.5 text-neutral-500" />
-              <b className="text-[#eee]">{character.chats || "9.9K"}</b>
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400 font-semibold bg-[#111112] border border-neutral-900 px-3 py-1.5 rounded-full">
-              <Image className="w-3.5 h-3.5 text-neutral-500" />
-              <b className="text-[#eee]">71</b>
-            </span>
-
+          {/* Desktop Action Buttons bar */}
+          <div className="hidden lg:flex items-center gap-3.5 mt-6 w-full select-none">
             <button
-              onClick={handleLikeCharacter}
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer transition-all border ${
-                hasLiked 
-                  ? "bg-rose-500/10 border-rose-500/20 text-rose-400" 
-                  : "bg-[#111112] border-neutral-900 text-neutral-400 hover:bg-neutral-850"
+              onClick={() => setIsPersonaModalOpen(true)}
+              className="flex-grow bg-gradient-to-r from-[#7c6cff] to-[#5f4fd6] text-white font-extrabold text-[15px] h-12 rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99] transition-all shadow-xl shadow-[#7c6cff]/20 cursor-pointer"
+            >
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span>대화하기</span>
+            </button>
+            
+            <button
+              onClick={handleToggleFavorite}
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all cursor-pointer active:scale-95 ${
+                isFavorite 
+                  ? "bg-[#7c6cff]/10 border-amber-500/30 text-amber-400" 
+                  : "bg-neutral-950/40 border-neutral-800 text-neutral-400 hover:text-white hover:border-[#7c6cff]/30"
               }`}
+              title="즐겨찾기"
             >
-              <Heart className={`w-3.5 h-3.5 ${hasLiked ? "fill-rose-500" : ""}`} />
-              <b className={hasLiked ? "text-rose-400" : "text-[#eee]"}>{localLikes.toLocaleString()}</b>
-            </button>
-
-            <span className="w-[1px] h-3.5 bg-neutral-900 hidden md:block" />
-
-            {/* Author label toggle */}
-            <span 
-              onClick={() => setIsAuthorModalOpen(true)}
-              className="inline-flex lg:hidden items-center gap-1.5 text-xs font-semibold text-[#b9adff] hover:text-white cursor-pointer bg-[#7c6cff]/8 border border-[#7c6cff]/12 px-3.5 py-1.5 rounded-full hover:bg-[#7c6cff]/15 transition-all"
-              title="작가 카드 스펙 보기"
-            >
-              <span className="w-4 h-4 rounded-full bg-gradient-to-tr from-[#7c6cff] to-[#4f7cff] text-[9px] font-black text-white flex items-center justify-center">
-                작
-              </span>
-              <span>작가: {metadata.author}</span>
-            </span>
-          </div>
-
-          {/* Abstract tag labels row */}
-          <div className="flex flex-wrap gap-1.5 mt-5">
-            {metadata.tags.map((tag) => (
-              <span 
-                key={tag} 
-                className="text-xs font-semibold text-[#b9adff] bg-[#7c6cff]/8 px-2.5 py-1 rounded-full border border-[#7c6cff]/10"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-
-          {/* CTA actions group */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-6">
-            <button
-              onClick={() => onStartChat(character.id)}
-              className="flex-1 bg-gradient-to-r from-[#7c6cff] to-[#5f4fd6] text-white font-extrabold text-sm py-4.5 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.01] hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-[#7c6cff]/10 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-white text-white" />
-              <span>새 대화 시작하기</span>
-            </button>
-            <button
-              onClick={() => onStartChat(character.id)}
-              className="lg:hidden flex bg-[#111112] hover:bg-[#1a1a1f] border border-neutral-900 text-neutral-200 font-bold text-sm py-4.5 px-6 rounded-xl items-center justify-center gap-2 hover:scale-[1.01] active:scale-95 transition-all cursor-pointer"
-            >
-              <span>대화 이어서하기</span>
-            </button>
-            <button
-              onClick={() => triggerToast("원작 소설/웹툰 플랫폼 연동 페이지로 이동합니다 (인공지능 데모)")}
-              className="lg:hidden flex bg-neutral-950 hover:bg-neutral-900 border border-neutral-950 text-neutral-400 font-bold text-sm py-4.5 px-5 rounded-xl items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>원작 보러가기</span>
+              <Star className={`w-4 h-4 ${isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
             </button>
           </div>
 
@@ -746,7 +879,7 @@ export default function CharacterDetail({
       </section>
 
       {/* CHARACTER ASSETS COLLECTION AREA */}
-      <section className="py-8 border-t border-neutral-900 px-4 lg:px-0 bg-[#0a0a0c] lg:bg-transparent relative z-20">
+      <section className="py-8 border-t border-neutral-900/60 px-4 lg:px-0 bg-transparent lg:bg-transparent relative z-20">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl md:text-2xl font-black text-white select-none flex items-center gap-2">
             <span>컬렉션</span>
@@ -838,28 +971,21 @@ export default function CharacterDetail({
       </section>
 
       {/* MOBILE VIEW STICKY NAVIGATION HEADER */}
-      <div className="lg:hidden sticky top-0 z-40 bg-[#0a0a0c]/95 backdrop-blur-md border-b border-[#1f1f23] pt-4 pb-0 px-4 select-none flex flex-col gap-2.5">
-        <div className="flex items-center gap-3 px-2">
-          <button 
-            onClick={onBack} 
-            className="text-neutral-400 hover:text-white active:scale-95 p-1 cursor-pointer transition-all"
-            aria-label="뒤로가기"
-          >
-            <ArrowLeft className="w-5 h-5 text-white" />
-          </button>
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            <span className="text-white font-extrabold text-base truncate">{character.name}</span>
-            <span className="text-neutral-500 text-xs truncate">| {character.title}</span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-3 w-full text-center">
+      <div 
+        ref={tabContainerRef}
+        className={`lg:hidden sticky top-[56px] z-40 select-none transition-all duration-300 px-4 pt-3 pb-0 ${
+          isTabsPinned 
+            ? "bg-black border-b border-neutral-900/60 shadow-lg" 
+            : "bg-transparent"
+        }`}
+      >
+        <div className="grid grid-cols-3 w-full text-center font-sans">
           <button
             onClick={() => setActiveTab("dossier")}
             className={`pb-3 text-sm font-extrabold transition-all cursor-pointer ${
               activeTab === "dossier" 
                 ? "text-white border-b-2 border-[#7c6cff] font-black" 
-                : "text-neutral-500 hover:text-neutral-300 border-b-2 border-transparent"
+                : "text-neutral-500 hover:text-[#ccc] border-b-2 border-transparent"
             }`}
           >
             상세 정보
@@ -869,7 +995,7 @@ export default function CharacterDetail({
             className={`pb-3 text-sm font-extrabold transition-all cursor-pointer ${
               activeTab === "prologue" 
                 ? "text-white border-b-2 border-[#7c6cff] font-black" 
-                : "text-neutral-500 hover:text-neutral-300 border-b-2 border-transparent"
+                : "text-neutral-500 hover:text-[#ccc] border-b-2 border-transparent"
             }`}
           >
             프롤로그
@@ -879,7 +1005,7 @@ export default function CharacterDetail({
             className={`pb-3 text-sm font-extrabold transition-all cursor-pointer ${
               activeTab === "comments" 
                 ? "text-white border-b-2 border-[#7c6cff] font-black" 
-                : "text-neutral-500 hover:text-neutral-300 border-b-2 border-transparent"
+                : "text-neutral-500 hover:text-[#ccc] border-b-2 border-transparent"
             }`}
           >
             댓글 {localComments.length}
@@ -888,7 +1014,7 @@ export default function CharacterDetail({
       </div>
 
       {/* COMBINED DOSSIER & PROLOGUE SECTION */}
-      <section className={`py-8 border-t border-neutral-900 px-4 lg:px-0 bg-[#0a0a0c] lg:bg-transparent relative z-20 ${activeTab === "comments" ? "hidden lg:block" : "block"}`}>
+      <section className={`py-8 border-t border-neutral-900/60 px-4 lg:px-0 bg-transparent lg:bg-transparent relative z-20 ${activeTab === "comments" ? "hidden lg:block" : "block"}`}>
         <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-8 items-stretch">
           
           {/* Left Column: CHARACTER DOSSIER SHEET (상세정보) */}
@@ -899,7 +1025,7 @@ export default function CharacterDetail({
               </h2>
             </div>
 
-            <div className="w-full h-full bg-[#121215] border border-neutral-950/80 rounded-3xl p-5 md:p-6 relative overflow-hidden shadow-2xl flex flex-col justify-between">
+            <div className="w-full h-full bg-transparent lg:bg-[#121215] border-none lg:border lg:border-neutral-950/80 rounded-3xl p-5 md:p-6 relative overflow-hidden shadow-none lg:shadow-2xl flex flex-col justify-between">
               {/* Background grids / shadows like in a dossier file */}
               <div className="absolute inset-0 bg-radial-gradient(circle at 100% 0%, rgba(124, 108, 255, 0.04), transparent 40%) pointer-events-none" />
               
@@ -1096,7 +1222,7 @@ export default function CharacterDetail({
 
             <div className="flex flex-col gap-5 h-full">
               {/* Premium Live Chat Conversation Floor */}
-              <div className="flex flex-col gap-6 bg-[#131316] border border-neutral-950/80 rounded-[32px] p-6 md:p-8 shrink-0 flex-1 shadow-2xl relative overflow-hidden">
+              <div className="flex flex-col gap-6 bg-transparent lg:bg-[#131316] border-none lg:border lg:border-neutral-950/80 rounded-[32px] p-0 md:p-8 shrink-0 flex-1 shadow-none lg:shadow-2xl relative overflow-hidden">
                 {/* Free flowing narration paragraph to match the web-novel style in the uploaded photo */}
                 <div className="text-stone-300 text-sm md:text-base font-normal leading-[1.8] whitespace-pre-line tracking-wide pb-5 select-text border-b border-neutral-900/65">
                   {metadata.prologueText}
@@ -1158,7 +1284,7 @@ export default function CharacterDetail({
       </section>
 
       {/* COMMENTS LIST AREA (Replaces understanding) */}
-      <section className={`py-8 border-t border-neutral-900 px-4 lg:px-0 bg-[#0a0a0c] lg:bg-transparent relative z-20 ${activeTab === "comments" ? "block font-sans" : "hidden lg:block font-sans"}`}>
+      <section className={`py-8 border-t border-neutral-900/60 px-4 lg:px-0 bg-transparent lg:bg-transparent relative z-20 ${activeTab === "comments" ? "block font-sans" : "hidden lg:block font-sans"}`}>
         <div className="flex items-center justify-between mb-4.5">
           <h2 className="text-xl md:text-2xl font-black text-white select-none hidden lg:flex items-center gap-2">
             <span>댓글</span>
@@ -1222,7 +1348,7 @@ export default function CharacterDetail({
                   </div>
                 </div>
               </div>
-              <p className="text-base text-neutral-300 font-medium leading-relaxed pl-1 md:pl-10">
+              <p className="text-sm text-neutral-300 font-medium leading-relaxed pl-1 md:pl-10">
                 {comment.body}
               </p>
               <div className="flex items-center gap-4 pl-1 md:pl-10 mt-1">
@@ -1307,25 +1433,162 @@ export default function CharacterDetail({
       )}
 
       {/* PERSISTENT FLOATING BOTTOM CHAT BAR FOR MOBILE DEVICES */}
-      <div className="fixed bottom-[74px] left-4 right-4 bg-[#0e0e11]/95 backdrop-blur-md border border-neutral-800/80 px-4.5 py-3.5 rounded-[24px] flex lg:hidden items-center gap-3 z-[250] shadow-[0_12px_45px_rgba(0,0,0,0.85)] select-none animate-in fade-in slide-in-from-bottom-3 duration-300">
+      <div className="fixed bottom-4 left-4 right-4 flex lg:hidden items-center gap-3.5 z-[250] select-none animate-in fade-in slide-in-from-bottom-3 duration-300">
+        {/* Mobile Bookmark/Favorite Star Button */}
         <button
           onClick={handleToggleFavorite}
-          className={`p-3.5 rounded-2xl border transition-all cursor-pointer active:scale-95 shrink-0 ${
+          className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center shrink-0 border transition-all cursor-pointer active:scale-90 ${
             isFavorite 
-              ? "bg-amber-500/10 border-amber-500/20 text-amber-400" 
-              : "bg-neutral-950 border-neutral-900 text-neutral-400 hover:text-white"
+              ? "bg-amber-500/10 border-amber-500/30 text-amber-400" 
+              : "bg-[#0e0e11]/90 backdrop-blur-md border-neutral-800 text-neutral-400 hover:text-white"
           }`}
           title="관심 등록"
         >
           <Star className={`w-5 h-5 ${isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
         </button>
+
+        {/* Start Chat Button */}
         <button
-          onClick={() => onStartChat(character.id)}
-          className="flex-grow bg-gradient-to-r from-[#7c6cff] to-[#5f4fd6] text-white font-extrabold text-sm py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#7c6cff]/20 cursor-pointer"
+          onClick={() => setIsPersonaModalOpen(true)}
+          className="flex-grow bg-gradient-to-r from-[#7c6cff] to-[#5f4fd6] text-white font-extrabold text-[16px] h-[52px] rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl shadow-[#7c6cff]/25 cursor-pointer"
         >
           <span>대화하기</span>
         </button>
       </div>
+
+      {/* MULTI-PERSONA CHOICE DIALOG MODAL */}
+      {isPersonaModalOpen && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsPersonaModalOpen(false);
+          }}
+          className="fixed inset-0 z-[400] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div className="w-full max-w-sm bg-[#131217] border border-neutral-900 rounded-2xl p-5 relative animate-in zoom-in-95 duration-150 shadow-2xl text-left">
+            
+            {/* Modal Close Button */}
+            <button
+              onClick={() => setIsPersonaModalOpen(false)}
+              className="absolute top-4 right-4 text-neutral-500 hover:text-white cursor-pointer bg-transparent border-0"
+              aria-label="닫기"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header Content */}
+            <div className="text-center mb-5 mt-1.5">
+              <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[#7c6cff]/10 text-[#a394ff] mb-2.5">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-black text-white leading-none">어느 페르소나로 대화할까요?</h3>
+              <p className="text-[11.5px] text-neutral-500 mt-1.5 max-w-[280px] mx-auto leading-normal">
+                각 페르소나별로 대화 흐름이 분리되어 저장되며 새로운 대화 국면을 설계할 수 있습니다.
+              </p>
+            </div>
+
+            {/* Persona Lists Scroll viewport */}
+            <div className="flex flex-col gap-1.5 max-h-[180px] overflow-y-auto mb-4 scrollbar-none pr-0.5">
+              {(userState.personas || ["독자님"]).map((p) => {
+                const isActive = selectedPersona === p;
+                const history = loadChatHistory(character.id, p);
+                const isNew = history.length === 0;
+                
+                return (
+                  <div
+                    key={p}
+                    onClick={() => setSelectedPersona(p)}
+                    className={`group relative flex items-center justify-between gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                      isActive 
+                        ? "bg-[#7c6cff]/10 border-[#7c6cff]/60" 
+                        : "bg-[#0c0c0e] hover:bg-[#18181d] border-neutral-900/80"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0 pr-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[12.5px] font-extrabold truncate ${isActive ? "text-[#b2a5ff]" : "text-white"}`}>
+                          {p}
+                        </span>
+                        {p === userState.nickname && (
+                          <span className="text-[8px] bg-neutral-950 text-neutral-500 font-bold px-1.5 py-0.2 rounded shrink-0">
+                            기본
+                          </span>
+                        )}
+                      </div>
+                      
+                      <span className="text-[9.5px] text-neutral-400 truncate leading-none">
+                        {isNew ? (
+                          <span className="text-[#a394ff]/80 font-bold">🌱 새로운 대화 가능</span>
+                        ) : (
+                          <span>💬 {history.length}턴 나누는 중 · "{history[history.length - 1].text.slice(0, 15)}..."</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {/* Clear history button inside Modal */}
+                      {!isNew && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetHistoryInModal(p);
+                          }}
+                          className="p-1 px-1.5 bg-neutral-950 hover:bg-rose-500/10 text-neutral-500 hover:text-rose-400 border border-neutral-900 hover:border-rose-500/30 rounded-lg cursor-pointer transition-all shrink-0"
+                          title="대화 초기화"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                      
+                      {/* Check dot marker */}
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                        isActive 
+                          ? "bg-[#7c6cff] border-[#7c6cff] text-white" 
+                          : "border-neutral-800 bg-neutral-950"
+                      }`}>
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white animate-in zoom-in-50 duration-200" />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Create new Persona Form */}
+            <form onSubmit={handleAddNewPersona} className="p-3 bg-neutral-950 border border-neutral-900/60 rounded-xl mb-4">
+              <span className="text-[10px] font-black text-neutral-500 tracking-wider block mb-1">
+                + 새 페르소나 빠르게 직접 추가
+              </span>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="예: 츤데레, 험난한 과대표, ..."
+                  value={newPersonaName}
+                  onChange={(e) => setNewPersonaName(e.target.value)}
+                  maxLength={15}
+                  className="flex-grow bg-[#0c0c0e] border border-neutral-900 focus:border-[#7c6cff]/40 rounded-lg py-1.5 px-2.5 text-xs text-neutral-200 placeholder-neutral-700 outline-none transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={!newPersonaName.trim()}
+                  className="bg-[#7c6cff] hover:bg-[#5f4fd6] disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-white text-xs font-black h-[28px] px-3.5 rounded-lg shrink-0 cursor-pointer transition-colors"
+                >
+                  추가
+                </button>
+              </div>
+            </form>
+
+            {/* Core Action Button */}
+            <button
+              onClick={handleConfirmStartChat}
+              className="w-full bg-gradient-to-r from-[#7c6cff] to-[#5f4fd6] text-white font-extrabold text-[14px] h-[46px] rounded-xl flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-[0.99] transition-all shadow-xl shadow-[#7c6cff]/10 cursor-pointer"
+            >
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span>[{selectedPersona}] 페르소나로 대화시작</span>
+            </button>
+
+          </div>
+        </div>
+      )}
 
       {/* FLOAT MESSAGE TOAST ALERT MANAGER */}
       {toastMessage && (

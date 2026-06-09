@@ -9,7 +9,9 @@ const DEFAULT_STATE: UserState = {
   tickets: 100, // Displayed as 챗티켓
   favorites: ["amelia", "sooa", "saebyeok"],
   unlockedAdult: true, // Safety filter: adult themes toggled on by default
-  theme: "dark"
+  theme: "dark",
+  personas: ["독자님"],
+  activePersona: "독자님"
 };
 
 export function loadUserState(): UserState {
@@ -18,8 +20,19 @@ export function loadUserState(): UserState {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Ensure all fields exist
-      return { ...DEFAULT_STATE, ...parsed };
+      // Clean fallback if persona data doesn't exist
+      const nickname = parsed.nickname || DEFAULT_STATE.nickname;
+      const personas = parsed.personas && parsed.personas.length > 0 
+        ? parsed.personas 
+        : [nickname];
+      const activePersona = parsed.activePersona || nickname || DEFAULT_STATE.activePersona;
+
+      return { 
+        ...DEFAULT_STATE, 
+        ...parsed,
+        personas,
+        activePersona
+      };
     }
   } catch (e) {
     console.error("Failed to load user state", e);
@@ -36,34 +49,46 @@ export function saveUserState(state: UserState): void {
   }
 }
 
-export function loadChatHistory(characterId: string): Message[] {
+export function loadChatHistory(characterId: string, personaName: string = "독자님"): Message[] {
   if (typeof window === "undefined") return [];
   try {
-    const saved = localStorage.getItem(`${CHAT_HISTORY_PREFIX}${characterId}`);
+    const key = `${CHAT_HISTORY_PREFIX}${characterId}_${personaName}`;
+    const oldKey = `${CHAT_HISTORY_PREFIX}${characterId}`;
+    
+    let saved = localStorage.getItem(key);
+    // Legacy mapping: migration fallback if no persona history is found for DEFAULT persona
+    if (!saved && (personaName === "독자님" || personaName === "")) {
+      const oldSaved = localStorage.getItem(oldKey);
+      if (oldSaved) {
+        localStorage.setItem(key, oldSaved);
+        saved = oldSaved;
+      }
+    }
+    
     if (saved) {
       return JSON.parse(saved);
     }
   } catch (e) {
-    console.error(`Failed to load chat history for ${characterId}`, e);
+    console.error(`Failed to load chat history for ${characterId} for persona ${personaName}`, e);
   }
   return [];
 }
 
-export function saveChatHistory(characterId: string, messages: Message[]): void {
+export function saveChatHistory(characterId: string, messages: Message[], personaName: string = "독자님"): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(`${CHAT_HISTORY_PREFIX}${characterId}`, JSON.stringify(messages));
+    localStorage.setItem(`${CHAT_HISTORY_PREFIX}${characterId}_${personaName}`, JSON.stringify(messages));
   } catch (e) {
-    console.error(`Failed to save chat history for ${characterId}`, e);
+    console.error(`Failed to save chat history for ${characterId} for persona ${personaName}`, e);
   }
 }
 
-export function clearChatHistory(characterId: string): void {
+export function clearChatHistory(characterId: string, personaName: string = "독자님"): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.removeItem(`${CHAT_HISTORY_PREFIX}${characterId}`);
+    localStorage.removeItem(`${CHAT_HISTORY_PREFIX}${characterId}_${personaName}`);
   } catch (e) {
-    console.error(`Failed to clear chat for ${characterId}`, e);
+    console.error(`Failed to clear chat for ${characterId} for persona ${personaName}`, e);
   }
 }
 

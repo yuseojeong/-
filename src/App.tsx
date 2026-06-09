@@ -13,6 +13,7 @@ import CharacterDetail from "./components/CharacterDetail";
 import ChatList from "./components/ChatList";
 import LeftSidebar from "./components/LeftSidebar";
 import Explore from "./components/Explore";
+import NovelDetailModal from "./components/NovelDetailModal";
 import { motion, AnimatePresence } from "motion/react";
 
 import { Character, UserState } from "./types";
@@ -30,6 +31,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedNovelCharacter, setSelectedNovelCharacter] = useState<Character | null>(null);
+  const [isNovelModalOpen, setIsNovelModalOpen] = useState(false);
 
   useEffect(() => {
     if (toastMessage) {
@@ -39,6 +42,19 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastMessage]);
+
+  // Always scroll to the top of the viewport when changing views, characters, or genres
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    // Scroll any potentially scrolling panels (like the main container or other scroll containers)
+    const scrollContainers = document.querySelectorAll(".overflow-y-auto, main");
+    scrollContainers.forEach((container) => {
+      container.scrollTop = 0;
+    });
+  }, [activeView, activeCharacterId, selectedGenre]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -51,6 +67,11 @@ export default function App() {
 
   const handleUpdateUserState = (updated: UserState) => {
     setUserState(updated);
+  };
+
+  const handleOpenNovelModalByChar = (char: Character) => {
+    setSelectedNovelCharacter(char);
+    setIsNovelModalOpen(true);
   };
 
   const handleSelectCharacterToDetail = (charId: string) => {
@@ -80,19 +101,21 @@ export default function App() {
   const isChatRoomFullscreen = activeView === "chat" && activeCharacterId !== null;
 
   return (
-    <div className={`min-h-screen bg-[#020202] text-[#e1e1e1] flex flex-col font-sans transition-all duration-300 ${isChatRoomFullscreen ? "pb-0" : "pb-20 md:pb-0"}`}>
+    <div className={`min-h-screen bg-[#020202] text-[#e1e1e1] flex flex-col font-sans transition-all duration-300 ${isChatRoomFullscreen || activeView === "detail" ? "pb-0" : "pb-20 md:pb-0"}`}>
       {/* 1. Nav header */}
       {!isChatRoomFullscreen && (
-        <Header
-          userState={userState}
-          onOpenMenu={() => setIsMenuOpen(true)}
-          onNavigate={(view) => {
-            setActiveView(view);
-            setActiveCharacterId(null);
-          }}
-          activeView={activeView}
-          onUpdateUserState={handleUpdateUserState}
-        />
+        <div className={activeView === "detail" ? "hidden md:block w-full" : "w-full"}>
+          <Header
+            userState={userState}
+            onOpenMenu={() => setIsMenuOpen(true)}
+            onNavigate={(view) => {
+              setActiveView(view);
+              setActiveCharacterId(null);
+            }}
+            activeView={activeView}
+            onUpdateUserState={handleUpdateUserState}
+          />
+        </div>
       )}
 
       {/* 2. Slide Drawer Menu Panel */}
@@ -132,9 +155,9 @@ export default function App() {
         )}
 
         {/* 3. Main Dashboard Frame Viewports */}
-        <main className={`flex-grow flex flex-col min-w-0 ${isChatRoomFullscreen ? "pt-0 pb-0 h-screen overflow-hidden" : "pt-[64px] md:pt-[90px]"}`}>
+        <main className={`flex-grow flex flex-col min-w-0 ${isChatRoomFullscreen ? "pt-0 pb-0 h-screen overflow-hidden" : activeView === "detail" ? "pt-0 pb-0 md:pt-[90px]" : "pt-[64px] md:pt-[90px]"}`}>
         {activeView === "home" && (
-          <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-6 md:gap-8 flex-1">
+          <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-10 md:gap-14 flex-1">
             {/* Featured banner Carousel */}
             <Carousel
               characters={INITIAL_CHARACTERS}
@@ -144,82 +167,54 @@ export default function App() {
             {/* Rotating top notice slider bar */}
             <NoticeBanner notices={NOTICES} />
 
-            {/* Sub-genre selection tabs mapping Novelpia categories */}
-            <WorldSelect
-              onSelectGenre={handleSelectGenreInCuration}
-              activeGenre={selectedGenre}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              isSearchOpen={isSearchOpen}
-              onToggleSearch={handleToggleSearch}
-            />
-
-            {/* Conditional curation groups based on active genre selections or search query */}
-            {isSearchOpen && searchQuery.trim() !== "" ? (
+            {/* Curated character lists for home view */}
+            <div className="flex flex-col gap-10 md:gap-14">
+              {/* 1. New update world curation grid block */}
               <CurationSection
-                title={`🔍 '${searchQuery}' 검색 결과`}
+                title="신규 차원 캐릭터 업데이트"
                 characters={INITIAL_CHARACTERS}
-                category="search"
-                searchQuery={searchQuery}
+                category="new"
                 userState={userState}
                 onUpdateUserState={handleUpdateUserState}
                 onSelectCharacter={handleSelectCharacterToDetail}
+                onSelectNovel={handleOpenNovelModalByChar}
               />
-            ) : selectedGenre !== "ALL" ? (
+
+              {/* 2. Best rating world curation block */}
               <CurationSection
-                title={`[ ${selectedGenre} ] 장르 필터링 검색 결과`}
+                title="지금 가장 핫한 인기 캐릭터 부스"
+                characters={INITIAL_CHARACTERS}
+                category="best"
+                userState={userState}
+                onUpdateUserState={handleUpdateUserState}
+                onSelectCharacter={handleSelectCharacterToDetail}
+                onSelectNovel={handleOpenNovelModalByChar}
+              />
+
+              {/* 3. General list curation block */}
+              <CurationSection
+                title="대학교 러블리 여사친 동거 섹션"
                 characters={INITIAL_CHARACTERS}
                 category="genre"
-                filterGenre={selectedGenre}
+                filterGenre="CAMPUS"
                 userState={userState}
                 onUpdateUserState={handleUpdateUserState}
                 onSelectCharacter={handleSelectCharacterToDetail}
+                onSelectNovel={handleOpenNovelModalByChar}
               />
-            ) : (
-              <>
-                {/* 1. New update world curation grid block */}
-                <CurationSection
-                  title="신규 차원 캐릭터 업데이트"
-                  characters={INITIAL_CHARACTERS}
-                  category="new"
-                  userState={userState}
-                  onUpdateUserState={handleUpdateUserState}
-                  onSelectCharacter={handleSelectCharacterToDetail}
-                />
 
-                {/* 2. Best rating world curation block */}
-                <CurationSection
-                  title="지금 가장 핫한 인기 캐릭터 부스"
-                  characters={INITIAL_CHARACTERS}
-                  category="best"
-                  userState={userState}
-                  onUpdateUserState={handleUpdateUserState}
-                  onSelectCharacter={handleSelectCharacterToDetail}
-                />
-
-                {/* 3. General list curation block */}
-                <CurationSection
-                  title="대학교 러블리 여사친 동거 섹션"
-                  characters={INITIAL_CHARACTERS}
-                  category="genre"
-                  filterGenre="CAMPUS"
-                  userState={userState}
-                  onUpdateUserState={handleUpdateUserState}
-                  onSelectCharacter={handleSelectCharacterToDetail}
-                />
-
-                {/* 4. Alternate block */}
-                <CurationSection
-                  title="최면과 일진들의 흔들거리는 지배 관계"
-                  characters={INITIAL_CHARACTERS}
-                  category="genre"
-                  filterGenre="HYPNOSIS"
-                  userState={userState}
-                  onUpdateUserState={handleUpdateUserState}
-                  onSelectCharacter={handleSelectCharacterToDetail}
-                />
-              </>
-            )}
+              {/* 4. Alternate block */}
+              <CurationSection
+                title="최면과 일진들의 흔들거리는 지배 관계"
+                characters={INITIAL_CHARACTERS}
+                category="genre"
+                filterGenre="HYPNOSIS"
+                userState={userState}
+                onUpdateUserState={handleUpdateUserState}
+                onSelectCharacter={handleSelectCharacterToDetail}
+                onSelectNovel={handleOpenNovelModalByChar}
+              />
+            </div>
           </div>
         )}
 
@@ -229,6 +224,7 @@ export default function App() {
             userState={userState}
             onUpdateUserState={handleUpdateUserState}
             onSelectCharacter={handleSelectCharacterToDetail}
+            onSelectNovel={handleOpenNovelModalByChar}
           />
         )}
 
@@ -243,6 +239,7 @@ export default function App() {
               setActiveView("home");
               setActiveCharacterId(null);
             }}
+            onSelectNovel={handleOpenNovelModalByChar}
           />
         )}
 
@@ -274,6 +271,7 @@ export default function App() {
             characters={INITIAL_CHARACTERS}
             userState={userState}
             onSelectCharacter={handleSelectCharacterToDetail}
+            onSelectNovel={handleOpenNovelModalByChar}
           />
         )}
 
@@ -284,6 +282,7 @@ export default function App() {
             onUpdateUserState={handleUpdateUserState}
             onSelectCharacter={handleSelectCharacterToDetail}
             onNavigateHome={() => setActiveView("home")}
+            onSelectNovel={handleOpenNovelModalByChar}
           />
         )}
 
@@ -297,7 +296,7 @@ export default function App() {
     </div>
 
       {/* 4. Mobile Bottom Navigation Drawer (Visible on narrow viewports) */}
-      {!isChatRoomFullscreen && (
+      {!isChatRoomFullscreen && activeView !== "detail" && (
         <div className="fixed bottom-0 left-0 right-0 h-[58px] bg-[#1a1a1c]/95 backdrop-blur-md border-t border-[#303030]/60 flex items-center md:hidden z-[100] select-none text-[10px] text-neutral-400">
           <button
             onClick={() => {
@@ -386,7 +385,7 @@ export default function App() {
 
       {/* 5. Company info corporate Footer (Shown only if view is not chat fullscreen) */}
       {activeView !== "chat" && (
-        <footer className="bg-[#111112] border-t border-[#222]/80 mt-auto py-8 px-4 md:px-8 select-none text-[11px] md:text-xs text-neutral-500 font-sans">
+        <footer className={`bg-[#111112] border-t border-[#222]/80 mt-auto py-8 px-4 md:px-8 select-none text-[11px] md:text-xs text-neutral-500 font-sans ${activeView === "detail" ? "hidden md:block" : ""}`}>
           <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row justify-between gap-8 py-3">
             
             {/* MetaCraft company details */}
@@ -428,6 +427,12 @@ export default function App() {
           </div>
         </footer>
       )}
+      {/* Novel Detail Modal */}
+      <NovelDetailModal
+        isOpen={isNovelModalOpen}
+        onClose={() => setIsNovelModalOpen(false)}
+        character={selectedNovelCharacter}
+      />
     </div>
   );
 }

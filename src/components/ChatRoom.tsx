@@ -34,7 +34,8 @@ export default function ChatRoom({
 
   // Load chat history on character switch
   useEffect(() => {
-    const history = loadChatHistory(activeChar.id);
+    const activePersona = userState.activePersona || "독자님";
+    const history = loadChatHistory(activeChar.id, activePersona);
     if (history.length > 0) {
       setMessages(history);
     } else {
@@ -46,7 +47,7 @@ export default function ChatRoom({
         timestamp: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
       };
       setMessages([initialGreeting]);
-      saveChatHistory(activeChar.id, [initialGreeting]);
+      saveChatHistory(activeChar.id, [initialGreeting], activePersona);
     }
 
     // Ping check server
@@ -58,7 +59,7 @@ export default function ChatRoom({
       })
       .catch(() => setConnectionStatus("offline"));
 
-  }, [activeChar.id]);
+  }, [activeChar.id, userState.activePersona]);
 
   // Scroll to bottom on updates
   useEffect(() => {
@@ -96,9 +97,10 @@ export default function ChatRoom({
       timestamp: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
     };
 
+    const activePersona = userState.activePersona || "독자님";
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
-    saveChatHistory(activeChar.id, newMessages);
+    saveChatHistory(activeChar.id, newMessages, activePersona);
     setInputText("");
     setIsTyping(true);
 
@@ -128,7 +130,7 @@ export default function ChatRoom({
         };
         const updatedHistory = [...newMessages, charMsg];
         setMessages(updatedHistory);
-        saveChatHistory(activeChar.id, updatedHistory);
+        saveChatHistory(activeChar.id, updatedHistory, activePersona);
       } else {
         throw new Error("Server reply error, rolling back to local prompt runner");
       }
@@ -145,7 +147,7 @@ export default function ChatRoom({
         };
         const updatedHistory = [...newMessages, charMsg];
         setMessages(updatedHistory);
-        saveChatHistory(activeChar.id, updatedHistory);
+        saveChatHistory(activeChar.id, updatedHistory, activePersona);
       }, 1200);
     } finally {
       setIsTyping(false);
@@ -153,8 +155,9 @@ export default function ChatRoom({
   };
 
   const handleClearChat = () => {
+    const activePersona = userState.activePersona || "독자님";
     if (confirm("이 캐릭터와의 대화 내역을 모두 삭제하시겠습니까?")) {
-      clearChatHistory(activeChar.id);
+      clearChatHistory(activeChar.id, activePersona);
       const initialGreeting: Message = {
         id: "welcome",
         sender: "character",
@@ -162,7 +165,7 @@ export default function ChatRoom({
         timestamp: new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
       };
       setMessages([initialGreeting]);
-      saveChatHistory(activeChar.id, [initialGreeting]);
+      saveChatHistory(activeChar.id, [initialGreeting], activePersona);
     }
   };
 
