@@ -164,9 +164,6 @@ export default function App() {
               onSelectCharacter={handleSelectCharacterToDetail}
             />
 
-            {/* Rotating top notice slider bar */}
-            <NoticeBanner notices={NOTICES} />
-
             {/* Curated character lists for home view */}
             <div className="flex flex-col gap-10 md:gap-14">
               {/* 1. New update world curation grid block */}

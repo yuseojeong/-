@@ -56,17 +56,26 @@ export default function Header({ userState, onOpenMenu, onNavigate, activeView, 
             </div>
           </div>
 
-          {/* Glowing Gradient Profile Ring Trigger for Mobile */}
-          <button
-            onClick={onOpenMenu}
-            className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-[#3a5cff] via-[#02e2f4] to-[#7632ff] flex items-center justify-center hover:scale-[1.03] active:scale-95 transition-all duration-300"
-          >
-            <div className="w-full h-full rounded-full bg-[#171719] overflow-hidden flex items-center justify-center">
-              <svg className="w-5 h-5 text-neutral-400 fill-current" viewBox="0 0 24 24">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
+          {/* Right Area for Mobile Header (Ticket & Profile) */}
+          <div className="flex items-center gap-3">
+            {/* Mobile Chat Ticket Pill */}
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#111] border border-[#222]">
+              <img src="//images.novelpia.com/img/new/chat/icon_chat_ticket.svg" alt="챗티켓" className="w-4 h-4 object-contain shrink-0" referrerPolicy="no-referrer" />
+              <span className="text-xs font-bold text-white select-none">{userState.tickets}</span>
             </div>
-          </button>
+
+            {/* Glowing Gradient Profile Ring Trigger for Mobile */}
+            <button
+              onClick={onOpenMenu}
+              className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-[#3a5cff] via-[#02e2f4] to-[#7632ff] flex items-center justify-center hover:scale-[1.03] active:scale-95 transition-all duration-300"
+            >
+              <div className="w-full h-full rounded-full bg-[#171719] overflow-hidden flex items-center justify-center">
+                <svg className="w-5 h-5 text-neutral-400 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              </div>
+            </button>
+          </div>
         </div>
 
 
