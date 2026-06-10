@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Star, Heart, Image, MessageSquare, Play, BookOpen, X, ChevronRight, Lock, PlusCircle, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Star, Heart, Image, MessageSquare, Play, BookOpen, X, ChevronRight, Lock, PlusCircle, Sparkles, Trash2, Share2 } from "lucide-react";
 import { Character, UserState } from "../types";
 import { getGenreKorean, loadChatHistory, clearChatHistory, getAvatarColor } from "../utils";
+import MobileCharacterDetail from "./MobileCharacterDetail";
 
 // Structuring rich metadata mappings for each character
 interface RichMetadata {
@@ -403,6 +404,45 @@ const DOSSIER_DATA: Record<string, CharacterDossier> = {
   }
 };
 
+const SCENARIOS_DATA: Record<string, string[]> = {
+  amelia: [
+    "아뜰리에의 비밀 야근 시간",
+    "나를 고양이 조수로 만들겠다고?"
+  ],
+  sooa: [
+    "비 내리는 날 밤, 단둘이서...",
+    "수아의 비밀 가방 수색 대소동"
+  ],
+  ohhana: [
+    "늦은 밤, 잠긴 하나 방 손잡이",
+    "소꿉친구의 기습 무단 외박 작전"
+  ],
+  commander: [
+    "경보 진동 속 사령 지휘실 통제",
+    "비전투원인 너를 지키는 법"
+  ],
+  saebyeok: [
+    "방과 후 적막한 미술실 단둘이",
+    "비 오는 날 길고양이 비 피해주기"
+  ],
+  juha: [
+    "방과 후 조용한 보건실 침대 뒤",
+    "일기장을 인질로 삼은 복종 계약"
+  ],
+  yuinha: [
+    "비좁은 옥탑방에서 굽는 삼겹살",
+    "비 오는 새벽의 옥탑방 단칸 동거"
+  ],
+  sharon: [
+    "인간계 세탁기와의 위험천만한 스파크",
+    "헤어드라이어를 마도 공학 보구로 오인할 때"
+  ],
+  seora: [
+    "심야의 기립 척추 교정 1:1 밀착 코칭",
+    "센터 불 꺼진 VIP 개인 훈련실"
+  ]
+};
+
 interface CharacterDetailProps {
   charId: string;
   characters: Character[];
@@ -682,61 +722,39 @@ export default function CharacterDetail({
   };
 
   return (
-    <div className="w-full max-w-[1240px] mx-auto px-0 lg:px-[20px] py-0 lg:py-8 flex flex-col gap-0 lg:gap-10 pb-10 lg:pb-8 relative">
+    <div className="w-full max-w-[1240px] mx-auto relative">
       
-      {/* Fixed Blurred Background Image for Mobile */}
-      <div className="fixed inset-0 lg:hidden z-0 pointer-events-none overflow-hidden">
-        {character.avatar ? (
-          <img
-            src={character.avatar}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover filter blur-[40px] brightness-[0.22] scale-110 saturate-[120%]"
-          />
-        ) : (
-          <div className={`w-full h-full bg-gradient-to-tr ${getAvatarColor(character.id)} opacity-40`} />
-        )}
-      </div>
+      {/* MOBILE DEVICE RENDER CONTROLLER */}
+      <MobileCharacterDetail
+        character={character}
+        metadata={metadata}
+        dossier={dossier}
+        isFavorite={isFavorite}
+        localLikes={localLikes}
+        hasLiked={hasLiked}
+        activeTab={activeTab}
+        localComments={localComments}
+        sortType={sortType}
+        commentInput={commentInput}
+        onBack={onBack}
+        onSelectNovel={onSelectNovel}
+        handleLikeCharacter={handleLikeCharacter}
+        handleToggleFavorite={handleToggleFavorite}
+        setIsPersonaModalOpen={setIsPersonaModalOpen}
+        setActiveTab={setActiveTab}
+        setSortType={setSortType}
+        setLocalComments={setLocalComments}
+        setCommentInput={setCommentInput}
+        handleAddComment={handleAddComment}
+        handleLikeComment={handleLikeComment}
+        triggerToast={triggerToast}
+        getAvatarColor={getAvatarColor}
+      />
 
-      {/* Mobile Unified Solid background sheet, starting at 35vh and covering all the way to bottom */}
-      <div className="absolute top-[35vh] inset-x-0 bottom-0 bg-gradient-to-b from-black/20 via-black/85 to-[#0a0a0c] border-none rounded-t-[32px] shadow-[0_-12px_45px_rgba(0,0,0,0.95)] backdrop-blur-2xl z-10 lg:hidden block pointer-events-none" />
-      
-      {/* MOBILE STICKY/FLOATING HEADER */}
-      <div 
-        className={`lg:hidden fixed top-0 inset-x-0 z-50 transition-all duration-300 flex items-center px-4 ${
-          isHeaderPinned 
-            ? "bg-black border-b border-neutral-900/60 shadow-md h-14" 
-            : "bg-transparent h-16 pointer-events-none"
-        }`}
-      >
-        <div className="flex items-center justify-between w-full pointer-events-auto">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onBack}
-              className={`flex items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
-                isHeaderPinned
-                  ? "w-8 h-8 text-neutral-300 hover:text-white"
-                  : "w-10 h-10 text-white"
-              }`}
-              aria-label="목록으로 돌아가기"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div 
-              className={`flex items-center gap-1.5 overflow-hidden transition-all duration-300 transform ${
-                isHeaderPinned 
-                  ? "opacity-100 translate-x-0 font-bold" 
-                  : "opacity-0 -translate-x-3 pointer-events-none"
-              }`}
-            >
-              <span className="text-white font-extrabold text-base truncate">{character.name}</span>
-              <span className="text-neutral-500 text-xs truncate">| {character.title}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop view banner navigation */}
+      {/* DESKTOP-ONLY VIEW CONTAINER */}
+      <div className="hidden lg:flex flex-col gap-10 px-0 lg:px-[20px] py-0 lg:py-8 pb-10 lg:pb-8 relative w-full">
+        
+        {/* Desktop view banner navigation */}
       <div className="hidden lg:flex items-center justify-between pb-3 border-b border-neutral-900 relative top-auto left-auto">
         <button
           onClick={onBack}
@@ -1371,6 +1389,8 @@ export default function CharacterDetail({
         </div>
 
       </section>
+
+      </div> {/* DESKTOP-ONLY VIEW CONTAINER END */}
 
       {/* AUTHOR MODAL PROFILE POPUP */}
       {isAuthorModalOpen && (
