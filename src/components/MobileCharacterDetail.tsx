@@ -101,6 +101,7 @@ interface MobileCharacterDetailProps {
   handleLikeComment: (commentId: string) => void;
   triggerToast: (msg: string) => void;
   getAvatarColor: (id: string) => string;
+  isHeaderPinned?: boolean;
 }
 
 export default function MobileCharacterDetail({
@@ -126,7 +127,8 @@ export default function MobileCharacterDetail({
   handleAddComment,
   handleLikeComment,
   triggerToast,
-  getAvatarColor
+  getAvatarColor,
+  isHeaderPinned = false
 }: MobileCharacterDetailProps) {
   const scenarios = SCENARIOS_DATA[character.id] || [
     "오리지널 로맨스 첫 대화 시나리오",
@@ -153,6 +155,34 @@ export default function MobileCharacterDetail({
   return (
     <div className="flex lg:hidden flex-col w-full bg-[#0a0a0c] text-neutral-200 min-h-screen pb-24 relative select-text">
       
+      {/* Fixed top profile header when scrolled past portrait */}
+      {isHeaderPinned && (
+        <div className="fixed top-0 inset-x-0 h-14 z-50 bg-[#0a0a0c]/95 backdrop-blur-md border-b border-neutral-900/60 flex items-center justify-between px-4 animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={onBack}
+              className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
+              aria-label="목록으로 돌아가기"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-neutral-800 flex-shrink-0">
+              {character.avatar ? (
+                <img src={character.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-tr ${getAvatarColor(character.id)}`} />
+              )}
+            </div>
+            <div className="text-left min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm font-black text-white truncate">{character.name}</h3>
+                <span className="text-[10.5px] text-neutral-400 shrink-0 font-medium">| {character.title}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. PORTRAIT VIEW SECTION ( 시원하게 확장된 이미지 비율 ) */}
       <div className="relative w-full h-[66vh] overflow-hidden select-none">
         {character.avatar ? (
@@ -319,8 +349,8 @@ export default function MobileCharacterDetail({
         </div>
 
         {/* Interactive content tab selection */}
-        <div className="sticky top-0 z-10 bg-[#0a0a0c] border-b border-neutral-900/60 pt-4 pb-0 flex flex-col">
-          <div className="grid grid-cols-3 w-full text-center">
+        <div className={`sticky ${isHeaderPinned ? "top-14" : "top-0"} z-40 bg-[#0a0a0c]/95 backdrop-blur-md border-b border-neutral-900/60 pt-2 pb-0 flex flex-col transition-all duration-150`}>
+          <div className="grid grid-cols-3 w-full text-center mt-2">
             <button
               onClick={() => setActiveTab("dossier")}
               className={`pb-3 text-[13.5px] font-extrabold transition-all cursor-pointer border-b-2 bg-transparent outline-none ${

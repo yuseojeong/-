@@ -612,29 +612,42 @@ export default function CharacterDetail({
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY);
-      if (profileTitleRef.current) {
-        const titleTop = profileTitleRef.current.getBoundingClientRect().top;
-        // The mobile header sticks at the top, height is 56px.
-        // If the real title top is ≤ 56px, it is scrolled past.
-        setIsHeaderPinned(titleTop <= 56);
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+      
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        // Mobile layout portrait view height is 66vh.
+        // We trigger the pinned header when the user scrolls past the portrait height (minus the header height of 56px).
+        const triggerPoint = window.innerHeight * 0.66 - 56;
+        setIsHeaderPinned(currentScrollY > triggerPoint);
       } else {
-        setIsHeaderPinned(window.scrollY > 280);
+        if (profileTitleRef.current) {
+          const titleTop = profileTitleRef.current.getBoundingClientRect().top;
+          // The mobile header sticks at the top, height is 56px.
+          // If the real title top is ≤ 56px, it is scrolled past.
+          setIsHeaderPinned(titleTop <= 56);
+        } else {
+          setIsHeaderPinned(currentScrollY > 280);
+        }
       }
+
       if (tabContainerRef.current) {
         const tabTop = tabContainerRef.current.getBoundingClientRect().top;
         // The tab container is sticky at top-[56px] (56px).
         // Once its top ≤ 57px, it is locked at the sticky top position.
         setIsTabsPinned(tabTop <= 57);
       } else {
-        setIsTabsPinned(window.scrollY > 600);
+        setIsTabsPinned(currentScrollY > 600);
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
     // Run once initially to set initial state
     handleScroll();
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, []);
 
@@ -749,6 +762,7 @@ export default function CharacterDetail({
         handleLikeComment={handleLikeComment}
         triggerToast={triggerToast}
         getAvatarColor={getAvatarColor}
+        isHeaderPinned={isHeaderPinned}
       />
 
       {/* DESKTOP-ONLY VIEW CONTAINER */}
