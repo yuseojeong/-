@@ -1,11 +1,12 @@
 import React from "react";
-import { Eye, MessageSquare, Heart, Star, StarOff } from "lucide-react";
+import { Eye, MessageSquare, Heart, Star, StarOff, ChevronRight } from "lucide-react";
 import { Character, UserState } from "../types";
 import { getAvatarColor, getGenreKorean } from "../utils";
 import { motion } from "motion/react";
 
 interface CurationSectionProps {
   title: string;
+  description?: string;
   characters: Character[];
   category: "all" | "adult" | "non-adult" | "best" | "genre" | string;
   userState: UserState;
@@ -14,10 +15,13 @@ interface CurationSectionProps {
   onSelectNovel: (character: Character) => void;
   filterGenre?: string;
   searchQuery?: string;
+  characterIds?: string[];
+  onViewMore?: () => void;
 }
 
 export default function CurationSection({
   title,
+  description,
   characters,
   category,
   userState,
@@ -25,36 +29,61 @@ export default function CurationSection({
   onSelectCharacter,
   onSelectNovel,
   filterGenre,
-  searchQuery
+  searchQuery,
+  characterIds,
+  onViewMore
 }: CurationSectionProps) {
   
-  // Filter based on category & adult lock
-  let filtered = characters.filter((c) => {
-    // If not matching adult mode settings
-    if (!userState.unlockedAdult && c.isAdult) return false;
-    return true;
-  });
+  let filtered: Character[] = [];
 
-  if (category === "search" && searchQuery) {
-    const q = searchQuery.toLowerCase().trim();
-    filtered = filtered.filter((c) => {
-      const matchName = c.name.toLowerCase().includes(q);
-      const matchTagline = c.tagline.toLowerCase().includes(q);
-      const matchDesc = c.description.toLowerCase().includes(q);
-      const matchTags = c.tags?.some((t) => t.toLowerCase().includes(q));
-      const matchGenre = getGenreKorean(c.genre).toLowerCase().includes(q);
-      return matchName || matchTagline || matchDesc || matchTags || matchGenre;
+  if (category === "character-ids" && characterIds) {
+    filtered = characters.filter((c) => characterIds.includes(c.id));
+  } else if (category === "non-adult-genre") {
+    filtered = characters.filter((c) => !c.isAdult);
+    if (filterGenre) {
+      const genres = filterGenre.split(",");
+      filtered = filtered.filter((c) => genres.includes(c.genre));
+    }
+  } else if (category === "adult-genre") {
+    if (userState.unlockedAdult) {
+      filtered = characters.filter((c) => c.isAdult);
+      if (filterGenre) {
+        const genres = filterGenre.split(",");
+        filtered = filtered.filter((c) => genres.includes(c.genre));
+      }
+    } else {
+      filtered = [];
+    }
+  } else {
+    // Filter based on category & adult lock
+    filtered = characters.filter((c) => {
+      // If not matching adult mode settings
+      if (!userState.unlockedAdult && c.isAdult) return false;
+      return true;
     });
-  } else if (category === "genre" && filterGenre) {
-    filtered = filtered.filter((c) => c.genre === filterGenre);
-  } else if (category === "best") {
-    filtered = filtered.filter((c) => c.badgeText?.includes("BEST"));
-  } else if (category === "new") {
-    filtered = filtered.filter((c) => c.badgeText?.includes("NEW") || c.badgeText?.includes("UPDATE"));
-  } else if (category === "adult_group") {
-    filtered = filtered.filter((c) => c.isAdult);
-  } else if (category === "general_group") {
-    filtered = filtered.filter((c) => !c.isAdult);
+
+    if (category === "search" && searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((c) => {
+        const matchName = c.name.toLowerCase().includes(q);
+        const matchTagline = c.tagline.toLowerCase().includes(q);
+        const matchDesc = c.description.toLowerCase().includes(q);
+        const matchTags = c.tags?.some((t) => t.toLowerCase().includes(q));
+        const matchGenre = getGenreKorean(c.genre).toLowerCase().includes(q);
+        return matchName || matchTagline || matchDesc || matchTags || matchGenre;
+      });
+    } else if (category === "genre" && filterGenre) {
+      const genres = filterGenre.split(",");
+      filtered = filtered.filter((c) => genres.includes(c.genre));
+    } else if (category === "best") {
+      filtered = filtered.filter((c) => c.badgeText?.includes("BEST"));
+    } else if (category === "new") {
+      filtered = filtered.filter((c) => c.badgeText?.includes("NEW") || c.badgeText?.includes("UPDATE"));
+    } else if (category === "adult_group") {
+      filtered = filtered.filter((c) => c.isAdult);
+    } else if (category === "general_group") {
+      filtered = filtered.filter((c) => !c.isAdult);
+    }
   }
 
   // If no items, do not render this category section to keep negative space tidy
@@ -93,10 +122,26 @@ export default function CurationSection({
     <section className="mb-12 md:mb-18 select-none">
       
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-3.5 md:mb-6 px-1.5">
-        <h2 className="text-[#eee] font-black text-[15px] md:text-2xl tracking-tight bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-transparent">
-          {title}
-        </h2>
+      <div className="flex flex-col gap-1 mb-3.5 md:mb-6 px-1.5 justify-start">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[#eee] font-black text-[15px] md:text-2xl tracking-tight bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-transparent">
+            {title}
+          </h2>
+          {onViewMore && (
+            <button
+              onClick={onViewMore}
+              className="text-[11px] md:text-sm text-[#8a72ff] hover:text-[#9e8aff] font-bold tracking-tight flex items-center gap-0.5 cursor-pointer bg-neutral-900/40 hover:bg-neutral-900/80 transition-all border border-neutral-850/60 py-1.5 px-3.5 rounded-full select-none"
+            >
+              <span>더보기</span>
+              <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
+          )}
+        </div>
+        {description && (
+          <p className="text-xs md:text-sm text-neutral-400 font-medium tracking-tight mt-0.5">
+            {description}
+          </p>
+        )}
       </div>
 
       {/* Characters Grid */}
@@ -152,7 +197,7 @@ export default function CurationSection({
                   {c.tags && c.tags.length > 0 ? (
                     c.tags.slice(0, 3).map((tag) => (
                       <span key={tag} className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 hover:text-[#c7bdff] transition-colors inline-block shrink-0">
-                        {tag}
+                        {tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#")}
                       </span>
                     ))
                   ) : (

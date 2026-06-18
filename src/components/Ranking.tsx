@@ -224,7 +224,7 @@ export default function Ranking({ characters, userState, onSelectCharacter, onSe
                             key={tIdx}
                             className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 hover:text-[#c7bdff] transition-colors inline-block shrink-0"
                           >
-                            {tag}
+                            {tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#")}
                           </span>
                         ))}
                       </div>
@@ -321,7 +321,7 @@ export default function Ranking({ characters, userState, onSelectCharacter, onSe
                             key={tIdx}
                             className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 hover:text-[#c7bdff] transition-colors inline-block shrink-0"
                           >
-                            {tag}
+                            {tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#")}
                           </span>
                         ))}
                       </div>

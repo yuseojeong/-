@@ -451,6 +451,7 @@ interface CharacterDetailProps {
   onStartChat: (charId: string) => void;
   onBack: () => void;
   onSelectNovel: (character: Character) => void;
+  onExploreTag?: (tag: string) => void;
 }
 
 interface CommentItem {
@@ -469,7 +470,8 @@ export default function CharacterDetail({
   onUpdateUserState,
   onStartChat,
   onBack,
-  onSelectNovel
+  onSelectNovel,
+  onExploreTag
 }: CharacterDetailProps) {
   const character = characters.find((c) => c.id === charId);
   const metadata = RICH_CHARACTERS_DATA[charId] || {
@@ -763,6 +765,7 @@ export default function CharacterDetail({
         triggerToast={triggerToast}
         getAvatarColor={getAvatarColor}
         isHeaderPinned={isHeaderPinned}
+        onExploreTag={onExploreTag}
       />
 
       {/* DESKTOP-ONLY VIEW CONTAINER */}
@@ -873,14 +876,18 @@ export default function CharacterDetail({
 
             {/* Abstract tag labels row */}
             <div className="flex flex-wrap gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 mt-0.5 md:mt-2">
-              {metadata.tags.map((tag) => (
-                <span 
-                  key={tag} 
-                  className="text-xs md:text-[16px] font-bold text-[#b9adff]/95 hover:text-[#c7bdff] transition-colors"
-                >
-                  {tag}
-                </span>
-              ))}
+              {(character.tags && character.tags.length > 0 ? character.tags : metadata.tags).map((tag) => {
+                const cleanedTag = tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#");
+                return (
+                  <button 
+                    key={tag} 
+                    onClick={() => onExploreTag?.(cleanedTag.replace("#", ""))}
+                    className="text-xs md:text-[16px] font-bold text-[#b9adff]/95 hover:text-white hover:underline transition-all cursor-pointer bg-transparent border-0 py-0 px-0 active:scale-95 text-left"
+                  >
+                    {cleanedTag}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

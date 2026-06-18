@@ -1,171 +1,194 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Character } from "../types";
-import { getAvatarColor } from "../utils";
+import { ChevronLeft, ChevronRight, Compass, Users } from "lucide-react";
+import { Character, NovelWorld } from "../types";
 
 interface CarouselProps {
   characters: Character[];
-  onSelectCharacter: (charId: string) => void;
+  novels: NovelWorld[];
+  onSelectNovel: (novel: NovelWorld) => void;
 }
 
-export default function Carousel({ characters, onSelectCharacter }: CarouselProps) {
-  // Select top characters for the carousel
-  const carouselItems = characters.filter((c) =>
-    ["amelia", "sooa", "ohhana", "saebyeok", "commander"].includes(c.id)
-  );
-
+export default function Carousel({ characters, novels, onSelectNovel }: CarouselProps) {
   const [currentIndex, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (novels.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
-    }, 6000);
+      setCurrentSlide((prev) => (prev + 1) % novels.length);
+    }, 7000);
     return () => clearInterval(timer);
-  }, [carouselItems.length]);
+  }, [novels.length]);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+    if (novels.length === 0) return;
+    setCurrentSlide((prev) => (prev + 1) % novels.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
+    if (novels.length === 0) return;
+    setCurrentSlide((prev) => (prev - 1 + novels.length) % novels.length);
   };
 
-  // Function to provide concept hashtag tags for carousel items
-  const getConceptTags = (id: string): string[] => {
-    switch (id) {
-      case "amelia":
-        return ["마녀도시", "금발마녀", "츤데레", "판타지", "마녀조수"];
-      case "sooa":
-        return ["원룸패밀리", "거유순둥이", "동거로맨스", "로맨스", "가출녀"];
-      case "ohhana":
-        return ["동거하우스", "금발미녀", "폭풍에너지", "두근두근", "하렘"];
-      case "saebyeok":
-        return ["문담피고교", "츤데레녀", "츤데레", "고교일상", "일진"];
-      case "commander":
-        return ["아포칼립스", "유일한인간", "지휘관", "SF미래", "생존기"];
-      default:
-        return ["인기캐릭터", "AI챗", "서브컬처", "가상연애"];
-    }
-  };
+  const activeNovel = novels[currentIndex];
+  if (!activeNovel) return null;
 
-  const activeChar = carouselItems[currentIndex];
-  if (!activeChar) return null;
+  // Find character objects belonging to this novel
+  const novelCharacters = characters.filter((char) =>
+    activeNovel.characterIds.includes(char.id)
+  );
 
   return (
-    <div className="relative w-full h-[320px] md:h-[450px] overflow-hidden select-none bg-[#0a0a0c] rounded-3xl border border-[#222]/50 shadow-2xl">
-      {/* Blurred background corresponding to the current character card or artwork */}
+    <div className="relative w-full h-[340px] md:h-[440px] overflow-hidden select-none bg-[#070709] rounded-3xl border border-[#222]/40 shadow-2xl">
+      {/* Immersive background artwork spanning the entire area */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeChar.id}
-            initial={{ opacity: 0, scale: 1.15 }}
+            key={activeNovel.id}
+            initial={{ opacity: 0, scale: 1.12 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.8 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
             className="absolute inset-0"
           >
-            {activeChar.avatar ? (
+            {activeNovel.bgImage ? (
               <img
-                src={activeChar.avatar}
+                src={activeNovel.bgImage}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover filter blur-2xl opacity-75 object-center scale-105"
+                className="absolute inset-0 w-full h-full object-cover filter blur-[2px] opacity-75 object-center scale-102"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className={`absolute inset-0 bg-gradient-to-tr ${getAvatarColor(activeChar.id)} filter blur-2xl opacity-75`} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#14121f] to-[#1e1a3a] filter blur-md opacity-80" />
             )}
-            {/* Beautiful light and colored translucent gradient overlays to guarantee text legibility without crushing the background artwork */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#020202]/90 via-transparent to-black/10 z-0" />
-            <div className="absolute inset-y-0 left-0 w-full md:w-3/4 bg-gradient-to-r from-[#020202]/85 via-[#020202]/30 to-transparent z-0" />
+            {/* Elegant multi-directional translucent gradient overlays to ensure absolute text premium contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#020202]/95 via-[#020202]/65 to-black/30 z-0" />
+            <div className="absolute inset-y-0 left-0 w-full md:w-3/4 bg-gradient-to-r from-[#020202]/90 via-[#020202]/40 to-transparent z-0" />
           </motion.div>
         </AnimatePresence>
-        
-        {/* Subtle grid pattern over blurred wallpaper */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:30px_34px] pointer-events-none"></div>
+
+        {/* Subtle grid accent design over blurred background */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
       </div>
 
-      {/* Main Slideshow viewport */}
-      <div className="relative z-10 w-full h-full flex items-center justify-between px-2 md:px-[40px]">
+      {/* Main slides layout viewport */}
+      <div className="relative z-10 w-full h-full flex items-center justify-between px-2 md:px-8">
         
-        {/* Left Arrow */}
+        {/* Left Arrow Controls */}
         <button
-          onClick={prevSlide}
-          className="p-1.5 md:p-3 rounded-full bg-black/40 border border-white/5 hover:bg-black/80 hover:scale-105 active:scale-95 transition-all text-neutral-300 hover:text-white cursor-pointer z-20 shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            prevSlide();
+          }}
+          className="p-2 md:p-3 rounded-full bg-black/50 border border-white/5 hover:bg-black/90 hover:scale-105 active:scale-95 transition-all text-neutral-300 hover:text-white cursor-pointer z-20 shrink-0"
         >
           <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
         </button>
 
-        {/* Carousel Content Container (Two-column layout on Desktop, Centered stack on Mobile) */}
-        <div className="flex-1 max-w-[1040px] h-full flex items-center px-1 md:px-8 overflow-hidden">
+        {/* Core Novel content slot */}
+        <div className="flex-1 max-w-[1020px] h-full flex items-center px-1 md:px-6 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeChar.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4 }}
-              className="w-full flex flex-col md:flex-row items-center md:justify-between gap-6 md:gap-10 text-left cursor-pointer group/slide"
-              onClick={() => onSelectCharacter(activeChar.id)}
+              key={activeNovel.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.45 }}
+              className="w-full h-full py-4 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6 md:gap-14 text-left cursor-pointer group/slide"
+              onClick={() => onSelectNovel(activeNovel)}
             >
               
-              {/* Left Column: Text Metadata & Actions */}
-              <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left min-w-0">
-                {/* Original Work Title Tag */}
-                <span className="inline-block text-[11px] md:text-xs font-bold text-[#b9adff] bg-[#7c6cff]/8 border border-[#7c6cff]/15 px-2.5 py-1 rounded-md mb-2 select-none tracking-tight">
-                  {activeChar.title}
+              {/* Left Info Panel: Title & Worldview Descriptions */}
+              <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left min-w-0 justify-center">
+                {/* Visual indicator badge */}
+                <span className="flex items-center gap-1.5 text-[10px] md:text-xs font-black tracking-wider uppercase text-[#a995ff] bg-[#7c6cff]/10 border border-[#7c6cff]/20 px-3 py-1 rounded-full mb-3 select-none">
+                  <Compass className="w-3.5 h-3.5" />
+                  WORLD DIMENSION
                 </span>
 
-                {/* H1 displays character name */}
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight select-none group-hover/slide:text-[#b9adff] transition-colors duration-200">
-                  {activeChar.name}
+                {/* World Title */}
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight select-none group-hover/slide:text-[#b09dff] transition-colors duration-200">
+                  {activeNovel.title}
                 </h1>
 
-                {/* Custom UQX hooking tagline line-clamp */}
-                <p className="text-neutral-400 text-sm mt-2.5 px-0.5 max-w-[500px] line-clamp-2 leading-relaxed tracking-tight select-none">
-                  {activeChar.tagline}
+                {/* Tagline showing core hook */}
+                <p className="text-[#cac4ff] font-semibold text-xs sm:text-sm md:text-base mt-2 max-w-[620px] line-clamp-1 leading-relaxed tracking-tight select-none">
+                  “{activeNovel.tagline}”
                 </p>
+
+                {/* Broad Worldview Summary */}
+                <p className="text-neutral-400 font-medium text-[11px] md:text-xs lg:text-[13px] mt-3 max-w-[650px] line-clamp-2 md:line-clamp-3 leading-relaxed tracking-normal select-none hidden sm:block">
+                  {activeNovel.synopsis}
+                </p>
+
+                {/* Premium Call to Action trigger indicator */}
+                <div className="mt-5 flex items-center gap-2 group-hover/slide:translate-x-1.5 transition-transform duration-300">
+                  <span className="text-[11px] md:text-xs font-bold text-[#b09dff]">세계관 상세 설정 & 캐스트 보기</span>
+                  <ChevronRight className="w-3 md:w-4 h-3 md:h-4 text-[#a995ff]" />
+                </div>
               </div>
 
-              {/* Right Column: Character Portrait Card (Responsive size, Desktop featured element) */}
-              <div className="w-[140px] sm:w-[180px] md:w-[600px] md:h-[330px] aspect-[4/5] md:aspect-auto shrink-0 rounded-2xl overflow-hidden border-2 border-white/10 hover:border-[#7632ff]/40 shadow-2xl relative group transition-all duration-300 hidden md:block">
-                {activeChar.avatar ? (
-                  <img
-                    src={activeChar.avatar}
-                    alt={activeChar.name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-fill scale-100 group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className={`w-full h-full bg-gradient-to-tr ${getAvatarColor(activeChar.id)} flex items-center justify-center`}>
-                    <span className="font-extrabold text-4xl text-neutral-300">{activeChar.name.slice(0, 1)}</span>
-                  </div>
-                )}
+              {/* Right Cast Panel: Characters belonging to this world */}
+              <div className="hidden md:flex flex-col w-[260px] lg:w-[280px] bg-black/40 border border-white/5 backdrop-blur-md rounded-2xl p-4 shrink-0 transition-all duration-300 hover:border-[#7c6cff]/30 hover:bg-black/50 select-none">
+                <div className="flex items-center gap-1.5 justify-start mb-3 border-b border-white/5 pb-2">
+                  <Users className="w-4 h-4 text-[#a995ff]" />
+                  <span className="text-[10px] lg:text-xs font-black text-neutral-300 tracking-tight">등장 캐릭터 캐스팅 ({novelCharacters.length})</span>
+                </div>
+                
+                {/* Vertical Avatar list with inline names */}
+                <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                  {novelCharacters.slice(0, 4).map((char) => (
+                    <div key={char.id} className="flex items-center gap-3 group/char text-[#e1e2e7] hover:text-white transition-colors">
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/10 group-hover/char:border-[#a995ff]/40 transition-all duration-300">
+                        <img
+                          src={char.avatar}
+                          alt={char.name}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover group-hover/char:scale-108 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="flex flex-col min-w-0 text-left">
+                        <span className="text-xs font-bold leading-tight tracking-tight text-neutral-200 group-hover/char:text-white">{char.name}</span>
+                        <span className="text-[9.5px]/none text-neutral-400 truncate mt-0.5 max-w-[190px]">{char.tagline}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {novelCharacters.length > 4 && (
+                    <div className="text-[10px] text-center text-neutral-500 font-medium py-1">
+                      외 {novelCharacters.length - 4}명의 인물 더보기...
+                    </div>
+                  )}
+                </div>
               </div>
 
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Right Arrow */}
+        {/* Right Arrow Controls */}
         <button
-          onClick={nextSlide}
-          className="p-1.5 md:p-3 rounded-full bg-black/40 border border-white/5 hover:bg-black/80 hover:scale-105 active:scale-95 transition-all text-neutral-300 hover:text-white cursor-pointer z-20 shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            nextSlide();
+          }}
+          className="p-2 md:p-3 rounded-full bg-black/50 border border-white/5 hover:bg-black/90 hover:scale-105 active:scale-95 transition-all text-neutral-300 hover:text-white cursor-pointer z-20 shrink-0"
         >
           <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
         </button>
 
       </div>
 
-      {/* Pagination bullets tracking bottom track */}
+      {/* Pagination indicators bottom track slider */}
       <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center gap-1.5">
-        {carouselItems.map((item, idx) => (
+        {novels.map((novel, idx) => (
           <button
-            key={item.id}
-            onClick={() => setCurrentSlide(idx)}
+            key={novel.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentSlide(idx);
+            }}
             className={`w-1.5 md:w-2 h-1.5 md:h-2 rounded-full transition-all duration-300 cursor-pointer ${
-              currentIndex === idx ? "w-6 md:w-8 bg-[#7632ff]" : "bg-neutral-600 hover:bg-neutral-400"
+              currentIndex === idx ? "w-6 md:w-8 bg-[#7c6cff]" : "bg-neutral-600 hover:bg-neutral-400"
             }`}
           />
         ))}

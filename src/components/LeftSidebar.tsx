@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Home, Compass, MessageSquare, Star, Trophy, Sparkles, Coins, Gift, MoreVertical } from "lucide-react";
+import { Home, Compass, MessageSquare, Star, Trophy, Sparkles, Coins, Gift, MoreVertical, Search } from "lucide-react";
 import { Character, UserState } from "../types";
 import { loadChatHistory } from "../utils";
 
 interface LeftSidebarProps {
   activeView: string;
   activeCharacterId: string | null;
-  onNavigate: (view: "home" | "explore" | "chat" | "ranking" | "favorite" | "myinfo") => void;
+  onNavigate: (view: "home" | "chat" | "ranking" | "search" | "myinfo") => void;
   onSelectCharacterToChat: (charId: string) => void;
   characters: Character[];
   userState: UserState;
@@ -70,17 +70,16 @@ export default function LeftSidebar({
   const primaryMenuItems = [
     { id: "home" as const, label: "홈", icon: <Home className="w-[18px] h-[18px]" /> },
     { id: "ranking" as const, label: "랭킹", icon: <Trophy className="w-[18px] h-[18px]" /> },
-    { id: "explore", label: "탐색", icon: <Compass className="w-[18px] h-[18px]" /> },
   ];
 
   const secondaryMenuItems = [
     { id: "chat", label: "채팅목록", icon: <MessageSquare className="w-[18px] h-[18px]" /> },
-    { id: "favorite" as const, label: "즐겨찾기", icon: <Star className="w-[18px] h-[18px]" /> },
+    { id: "search" as const, label: "검색", icon: <Search className="w-[18px] h-[18px]" /> },
     { id: "studio", label: "스튜디오", icon: <Sparkles className="w-[18px] h-[18px]" /> },
   ];
 
   const handleMenuClick = (id: string) => {
-    if (id === "home" || id === "ranking" || id === "favorite" || id === "explore" || id === "chat") {
+    if (id === "home" || id === "ranking" || id === "search" || id === "chat") {
       onNavigate(id as any);
     } else if (id === "studio") {
       triggerToast("에셋 스튜디오 & 페르소나 메이커가 곧 연동됩니다.");
@@ -159,8 +158,7 @@ export default function LeftSidebar({
           {primaryMenuItems.map((item) => {
             const isSelected = 
               (item.id === "home" && activeView === "home") ||
-              (item.id === "ranking" && activeView === "ranking") ||
-              (item.id === "explore" && activeView === "explore");
+              (item.id === "ranking" && activeView === "ranking");
 
             return (
               <button
@@ -206,7 +204,7 @@ export default function LeftSidebar({
           {secondaryMenuItems.map((item) => {
             const isSelected = 
               (item.id === "chat" && activeView === "chat" && activeCharacterId === null) ||
-              (item.id === "favorite" && activeView === "favorite") ||
+              (item.id === "search" && activeView === "search") ||
               (item.id === "studio" && activeView === "studio");
 
             return (

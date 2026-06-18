@@ -50,3 +50,21 @@ export interface Notice {
   id: string;
   text: string;
 }
+
+export interface NovelWorld {
+  id: string;
+  title: string;
+  tagline: string;
+  description: string;
+  synopsis: string;
+  bgImage: string;
+  characterIds: string[];
+  novelStats?: {
+    author: string;
+    views: string;
+    recommendations: string;
+    favorites: string;
+    chapters: string;
+    novelpiaUrl: string;
+  };
+}

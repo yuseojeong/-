@@ -1,11 +1,11 @@
 import React from "react";
-import { Menu, Settings, Coins, CreditCard, User, Heart } from "lucide-react";
+import { Menu, Settings, Coins, CreditCard, User, Heart, Store } from "lucide-react";
 import { UserState } from "../types";
 
 interface HeaderProps {
   userState: UserState;
   onOpenMenu: () => void;
-  onNavigate: (view: "home" | "explore" | "chat" | "ranking" | "favorite" | "myinfo") => void;
+  onNavigate: (view: "home" | "chat" | "ranking" | "search" | "myinfo") => void;
   activeView: string;
   onUpdateUserState: (updated: UserState) => void;
 }
@@ -24,56 +24,41 @@ export default function Header({ userState, onOpenMenu, onNavigate, activeView, 
         
         {/* MOBILE HEADER (md:hidden) */}
         <div className="flex md:hidden w-full h-full justify-between items-center px-4">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => onNavigate("home")}>
-            {/* Novelpia Logo Brand Icon - Purple gradient with custom aesthetic vector */}
-            <div className="w-8 h-8 bg-gradient-to-tr from-[#691eff] to-[#9156ff] rounded-[9px] flex items-center justify-center shadow-[0_3px_10px_rgba(118,50,255,0.35)]">
-              <svg className="w-4.5 h-4.5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Custom stylized wing icon */}
-                <path 
-                  d="M17.5 4.5C14.5 4.5 11 7.2 9.5 10.5C9.5 10.5 8 12 7.5 13.5C7.5 11 8.5 8.5 9 6.5C7 7.5 5 10 5 13.5C5 17.5 8 19.5 11.5 19.5C15 19.5 18.5 17 19.5 13C20.5 9 19.5 6 17.5 4.5Z" 
-                  fill="currentColor" 
-                />
-                <path 
-                  d="M14.5 9.5C13 11 11.5 12.5 11.5 14C11.5 15 12.2 15.5 13 15.5C14 15.5 15 14.5 15.5 13.5C15.5 14.5 14.5 15.5 14 16C13.2 16.8 11.5 17.5 10.5 16.5C9.8 15.8 9.5 14.5 10 13C10.5 11.5 12.5 9.5 14.5 9.5Z" 
-                  fill="currentColor" 
-                  className="opacity-75"
-                />
-              </svg>
-            </div>
+          {/* Hamburger Menu Button on Left */}
+          <button
+            onClick={onOpenMenu}
+            className="p-2 -ml-1 hover:bg-neutral-800/60 active:bg-neutral-800 rounded-xl text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-95 z-50"
+            title="상세 메뉴"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
 
-            {/* Brand Title Row */}
-            <div className="flex items-center gap-1.5 ml-1">
-              <span className="text-white font-black tracking-tight text-base font-sans">노벨피아</span>
-              <span className="text-neutral-700 font-normal text-sm opacity-80 pointer-events-none select-none">|</span>
-              <span className="text-[#00e5ff] font-black tracking-tight text-base font-sans">노벨챗</span>
-              
-              {/* Pointy Speech Bubble 'Chat' Badge */}
-              <div className="relative inline-flex items-center ml-1 bg-white text-[#00cbd6] font-black text-[9px] px-2 py-0.5 rounded-[7px] shadow-[0_2px_4px_rgba(0,0,0,0.15)] leading-none select-none">
-                <span>Chat</span>
-                {/* Speech Bubble Arrow Indicator */}
-                <div className="absolute left-[3px] -bottom-[4px] w-0 h-0 border-t-[5px] border-t-white border-r-[5px] border-r-transparent"></div>
-              </div>
+          {/* Center-Left Brand Title Row (Without '노벨피아' text) */}
+          <div className="flex items-center gap-1.5 cursor-pointer ml-1 flex-1 pl-2" onClick={() => onNavigate("home")}>
+            <span className="text-[#00e5ff] font-black tracking-tight text-[17px] font-sans">노벨챗</span>
+            
+            {/* Pointy Speech Bubble 'Chat' Badge */}
+            <div className="relative inline-flex items-center ml-0.5 bg-white text-[#00cbd6] font-black text-[8px] px-1.5 py-0.5 rounded-[6px] shadow-sm leading-none select-none">
+              <span>Chat</span>
+              <div className="absolute left-[3px] -bottom-[3px] w-0 h-0 border-t-[4px] border-t-white border-r-[4px] border-r-transparent"></div>
             </div>
           </div>
 
-          {/* Right Area for Mobile Header (Ticket & Profile) */}
-          <div className="flex items-center gap-3">
+          {/* Right Area for Mobile Header (Ticket Pill & Store Icon Button) */}
+          <div className="flex items-center gap-2">
             {/* Mobile Chat Ticket Pill */}
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#111] border border-[#222]">
               <img src="//images.novelpia.com/img/new/chat/icon_chat_ticket.svg" alt="챗티켓" className="w-4 h-4 object-contain shrink-0" referrerPolicy="no-referrer" />
               <span className="text-xs font-bold text-white select-none">{userState.tickets}</span>
             </div>
 
-            {/* Glowing Gradient Profile Ring Trigger for Mobile */}
+            {/* Shop/Store Button */}
             <button
               onClick={onOpenMenu}
-              className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-tr from-[#3a5cff] via-[#02e2f4] to-[#7632ff] flex items-center justify-center hover:scale-[1.03] active:scale-95 transition-all duration-300"
+              className="p-1 px-1.5 hover:bg-neutral-800/50 active:bg-neutral-800 rounded-lg text-neutral-400 hover:text-[#00cbd6] transition-colors cursor-pointer active:scale-95 flex items-center justify-center shrink-0"
+              title="상점"
             >
-              <div className="w-full h-full rounded-full bg-[#171719] overflow-hidden flex items-center justify-center">
-                <svg className="w-5 h-5 text-neutral-400 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
+              <Store className="w-5 h-5" />
             </button>
           </div>
         </div>

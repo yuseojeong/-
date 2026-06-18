@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { Star, StarOff, Compass, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Star, StarOff, ArrowLeft, Search, X } from "lucide-react";
 import { Character, UserState } from "../types";
 import { getAvatarColor, getGenreKorean } from "../utils";
 import { motion } from "motion/react";
-import WorldSelect from "./WorldSelect";
 
 interface ExploreProps {
   characters: Character[];
@@ -11,6 +10,9 @@ interface ExploreProps {
   onUpdateUserState: (state: UserState) => void;
   onSelectCharacter: (charId: string) => void;
   onSelectNovel: (character: Character) => void;
+  initialGenre?: string;
+  initialSearchQuery?: string;
+  onBack?: () => void;
 }
 
 export default function Explore({
@@ -19,10 +21,16 @@ export default function Explore({
   onUpdateUserState,
   onSelectCharacter,
   onSelectNovel,
+  initialGenre = "ALL",
+  initialSearchQuery = "",
+  onBack,
 }: ExploreProps) {
-  const [selectedGenre, setSelectedGenre] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  // Synchronize state changes when parent hands over pre-searched dynamic parameters
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
 
   // 1. Initial Filtering based on Adult Safe Mode Lock
   let filtered = characters.filter((c) => {
@@ -30,13 +38,8 @@ export default function Explore({
     return true;
   });
 
-  // 2. Filter by Genre
-  if (selectedGenre !== "ALL" && !isSearchOpen) {
-    filtered = filtered.filter((c) => c.genre === selectedGenre);
-  }
-
-  // 3. Filter by Search Query
-  if (isSearchOpen && searchQuery.trim() !== "") {
+  // 2. Filter by Search Query
+  if (searchQuery.trim() !== "") {
     const q = searchQuery.toLowerCase().trim();
     filtered = filtered.filter((c) => {
       const matchName = c.name.toLowerCase().includes(q);
@@ -59,53 +62,49 @@ export default function Explore({
     onUpdateUserState({ ...userState, favorites: updatedFavs });
   };
 
-  const handleSelectGenreInExplore = (genreName: string) => {
-    setSelectedGenre(genreName);
-    setSearchQuery("");
-    setIsSearchOpen(false);
-  };
-
-  const handleToggleSearch = () => {
-    const nextState = !isSearchOpen;
-    setIsSearchOpen(nextState);
-    if (!nextState) {
-      setSearchQuery("");
-    }
-  };
-
   return (
-    <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-4 flex-1 select-none animate-in fade-in duration-300">
+    <div className="w-full max-w-[1240px] mx-auto px-4 md:px-[20px] py-4 md:py-6 flex flex-col gap-5 flex-1 select-none animate-in fade-in duration-300">
       
-      {/* Title & Description Header Text Only */}
-      <div className="relative flex flex-col justify-center gap-2 py-2 px-1 pb-3 border-b border-neutral-900/40">
-        <div className="relative z-10">
-          <h2 className="text-[#eee] font-black text-xl md:text-3xl tracking-tight leading-none mb-2">
-            다양한 원작 소설 속 차원 속으로
-          </h2>
-          <p className="text-sm text-neutral-400 tracking-tight leading-relaxed max-w-none">
-            노벨피아 독점 소설 세계관 속 캐릭터와 대화를 즐겨보세요!
-          </p>
+      {/* 1. Clean Integrated Search Bar & Back Navigation at the Absolute Top */}
+      <div className="flex items-center gap-2.5 w-full mt-1">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center w-11 h-11 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-95 shrink-0 shadow-md"
+            title="상세 페이지로 가기"
+            id="explore-back-btn"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+        <div className="relative flex-grow flex items-center">
+          <input
+            type="text"
+            placeholder="캐릭터 이름, 태그, 한 줄 소개 등으로 검색해보세요..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-800/80 focus:border-[#7c6cff]/50 text-neutral-100 text-xs md:text-sm px-4 py-3 pr-11 rounded-2xl outline-none transition-all placeholder-neutral-500 font-semibold shadow-inner"
+            autoFocus
+          />
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 text-neutral-500 hover:text-neutral-300 cursor-pointer p-0.5"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <Search className="absolute right-4 text-neutral-600 w-4 h-4 pointer-events-none" />
+          )}
         </div>
       </div>
 
-      {/* Identical Genre Chip & Search Bar Div */}
-      <WorldSelect
-        onSelectGenre={handleSelectGenreInExplore}
-        activeGenre={selectedGenre}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isSearchOpen={isSearchOpen}
-        onToggleSearch={handleToggleSearch}
-      />
-
-      {/* Grid of All Matching Characters */}
-      <div className="mt-2">
+      {/* 2. Grid of All Matching Characters */}
+      <div className="mt-1">
         <div className="flex items-center justify-between mb-4 px-1.5">
-          <h3 className="text-[#eee] font-black text-base md:text-xl tracking-tight leading-none">
-            {isSearchOpen && searchQuery.trim() !== "" ? (
+          <h3 className="text-[#eee] font-black text-sm md:text-base tracking-tight leading-none">
+            {searchQuery.trim() !== "" ? (
               <span>🔍 검색 결과 <span className="text-[#7632ff] font-extrabold">{filtered.length}</span></span>
-            ) : selectedGenre !== "ALL" ? (
-              <span>✨ [ {getGenreKorean(selectedGenre)} ] 장르 필터 <span className="text-[#7632ff] font-extrabold">{filtered.length}</span></span>
             ) : (
               <span>🔥 전체 캐릭터 콜렉션 <span className="text-[#7632ff] font-extrabold">{filtered.length}</span></span>
             )}
@@ -113,10 +112,10 @@ export default function Explore({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4 bg-[#111112]/50 border border-neutral-800/20 rounded-2xl text-center">
+          <div className="flex flex-col items-center justify-center py-20 px-4 bg-[#111112]/30 border border-neutral-900/30 rounded-2xl text-center">
             <span className="text-neutral-500 text-4xl mb-3">🔍</span>
             <p className="text-sm md:text-base font-bold text-neutral-300">매칭되는 탐색 캐릭터가 없습니다</p>
-            <p className="text-xs text-neutral-500 mt-1">성인 락(19+) 설정을 해제하거나 다른 검색어/장르를 설정해보세요.</p>
+            <p className="text-xs text-neutral-500 mt-1">성인 락(19+) 설정을 해제하거나 다른 검색어를 입력해보세요.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 md:gap-5">
@@ -161,7 +160,7 @@ export default function Explore({
                         {c.name}
                       </h4>
                       
-                      <p className="text-[11px] md:text-sm text-neutral-300 line-clamp-2 md:line-clamp-3 leading-relaxed mt-0.5 md:mt-1 font-medium">
+                      <p className="text-[11px] md:text-xs text-neutral-300 line-clamp-2 md:line-clamp-3 leading-relaxed mt-0.5 md:mt-1 font-medium italic">
                         {c.tagline}
                       </p>
                     </div>
@@ -171,7 +170,7 @@ export default function Explore({
                       {c.tags && c.tags.length > 0 ? (
                         c.tags.slice(0, 3).map((tag) => (
                           <span key={tag} className="text-[10px] md:text-[11.5px] font-bold tracking-tight text-[#b9adff]/90 hover:text-[#c7bdff] transition-colors inline-block shrink-0">
-                            {tag}
+                            {tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#")}
                           </span>
                         ))
                       ) : (

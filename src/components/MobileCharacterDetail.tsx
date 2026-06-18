@@ -102,6 +102,7 @@ interface MobileCharacterDetailProps {
   triggerToast: (msg: string) => void;
   getAvatarColor: (id: string) => string;
   isHeaderPinned?: boolean;
+  onExploreTag?: (tag: string) => void;
 }
 
 export default function MobileCharacterDetail({
@@ -128,7 +129,8 @@ export default function MobileCharacterDetail({
   handleLikeComment,
   triggerToast,
   getAvatarColor,
-  isHeaderPinned = false
+  isHeaderPinned = false,
+  onExploreTag
 }: MobileCharacterDetailProps) {
   const scenarios = SCENARIOS_DATA[character.id] || [
     "오리지널 로맨스 첫 대화 시나리오",
@@ -261,16 +263,20 @@ export default function MobileCharacterDetail({
                 </button>
               </div>
 
-              {/* Hashtag List with clean textual formatting */}
-              <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1.5 select-none">
-                {metadata.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs font-bold text-[#b9adff]/95 hover:text-[#c7bdff] transition-colors"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              {/* Refined Concept Tags aligned fully in a single row with horizontal swipe behavior */}
+              <div className="flex flex-row flex-nowrap overflow-x-auto scrollbar-none gap-1.5 mt-3 select-none text-left w-full -mx-1 px-1">
+                {(character.tags && character.tags.length > 0 ? character.tags : metadata.tags).map((tag) => {
+                  const cleanedTag = tag.replace("#관계:", "#").replace("#성격:", "#").replace("#특징:", "#");
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => onExploreTag?.(cleanedTag.replace("#", ""))}
+                      className="shrink-0 px-2.5 py-1 text-[10.5px] font-black text-[#b9adff] hover:text-white bg-[#1a153b]/85 hover:bg-[#251e54]/95 border border-[#7d6cff]/20 hover:border-[#8e7eff]/40 rounded-lg shadow-sm transition-all duration-150 active:scale-95 cursor-pointer"
+                    >
+                      {cleanedTag}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
